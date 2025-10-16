@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 탄생화 알아보기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            /* Hanji (Korean paper) texture */
+            background-color: #fdfaf0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='10' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid #dcd3b2;
+            box-shadow: 0 0 0 4px #fdfaf0;
+        }
+        .btn-primary {
+            background-color: #8C4447; /* Muted Dancheong Red */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #6E3639;
+        }
+        .btn-secondary {
+            background-color: #D1C7B8; /* Warm Beige */
+            color: #4A4A4A;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #B9B0A2;
+        }
+        select {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns="http://www.w3.org/2000/svg" width="292.4" height="292.4"%3E%3Cpath fill="%234A5568" d="M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-13 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 13l128 127.9c3.6 3.6 7.8 5.4 13 5.4s9.4-1.8 13-5.4L287 95c3.5-3.5 5.4-7.8 5.4-13 0-5-1.9-9.4-5.4-13z"/%3E%3C/svg%3E');
+            background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 0.65rem auto;
+        }
+        /* Instagram Story container */
+        #story-content {
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 9 / 16;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-md mx-auto">
+        <!-- Input Screen -->
+        <div id="input-screen" class="card shadow-2xl rounded-2xl p-6 md:p-8 space-y-6">
+            <div class="flex justify-between items-center">
+                <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-gray-800">나의 탄생화 알아보기</h1>
+                <div class="flex items-center space-x-2 border border-gray-300 rounded-full p-1">
+                    <button id="lang-ko" class="px-3 py-1 text-sm rounded-full bg-gray-700 text-white">KO</button>
+                    <button id="lang-en" class="px-3 py-1 text-sm rounded-full">EN</button>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label id="month-label" for="month" class="block text-sm font-medium text-gray-700 mb-1">태어난 월</label>
+                    <select id="month" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#8C4447] focus:border-[#8C4447]">
+                    </select>
+                </div>
+                <div>
+                    <label id="day-label" for="day" class="block text-sm font-medium text-gray-700 mb-1">태어난 일</label>
+                    <select id="day" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#8C4447] focus:border-[#8C4447]">
+                    </select>
+                </div>
+            </div>
+            <button id="submit-button" class="w-full btn-primary font-bold py-3 px-4 rounded-lg shadow-lg transform hover:scale-105">
+                나의 탄생화 확인하기
+            </button>
+            <p id="input-error" class="text-red-600 text-center text-sm pt-2 hidden"></p>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden">
+             <div class="flex flex-col items-center space-y-4">
+                <!-- Story Content to be captured -->
+                <div id="story-content" class="rounded-2xl shadow-xl flex flex-col border-2 border-white/50 relative overflow-hidden">
+                    <!-- Background Image -->
+                    <img id="flower-image" src="" alt="Birth Flower" class="absolute top-0 left-0 w-full h-full object-cover z-0">
+                    
+                    <!-- Overlay for Content -->
+                    <div class="relative z-10 flex flex-col h-full p-4 text-white">
+                        <!-- Gradient for readability -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-[-1]"></div>
+
+                        <div class="text-center">
+                            <p id="result-date" class="text-sm text-white/90"></p>
+                            <h2 id="flower-name" class="text-4xl font-bold text-white [text-shadow:_1px_1px_4px_rgb(0_0_0_/_50%)]"></h2>
+                        </div>
+                        
+                        <div class="flex-grow"></div> <!-- Spacer -->
+
+                        <div class="space-y-2.5">
+                            <div class="bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-white/20">
+                                <h3 id="keywords-title" class="font-bold text-white/90 text-sm mb-1">키워드</h3>
+                                <p id="flower-keywords" class="text-white/90 text-sm"></p>
+                            </div>
+                            <div class="bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-white/20">
+                                <h3 id="description-title" class="font-bold text-white/90 text-sm mb-1">꽃 이야기</h3>
+                                <p id="flower-description" class="text-white/90 text-xs leading-relaxed"></p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div class="bg-black/40 backdrop-blur-sm p-3 rounded-xl text-center border border-white/20">
+                                    <h3 id="good-match-title" class="font-bold text-white/90 text-sm">잘 맞는 꽃</h3>
+                                    <p id="good-match-flower" class="text-white mt-1 text-sm"></p>
+                                </div>
+                                <div class="bg-black/40 backdrop-blur-sm p-3 rounded-xl text-center border border-white/20">
+                                    <h3 id="bad-match-title" class="font-bold text-white/90 text-sm">아쉬운 꽃</h3>
+                                    <p id="bad-match-flower" class="text-white mt-1 text-sm"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                         <div class="mt-4 text-center text-xs text-white/70 font-medium" id="story-footer">나의 탄생화 알아보기</div>
+                    </div>
+                </div>
+
+                <!-- Loading and Error states -->
+                <div id="loading" class="hidden text-center space-y-4 py-8">
+                     <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-gray-700 mx-auto"></div>
+                     <p id="loading-text" class="text-gray-600 font-medium">당신의 꽃을 피우는 중입니다...</p>
+                </div>
+                <div id="api-error" class="hidden text-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+                    <strong class="font-bold">오류</strong>
+                    <span class="block sm:inline">이미지 생성에 실패했습니다.</span>
+                    <button id="retry-button" class="mt-2 btn-secondary font-bold py-2 px-4 rounded-lg text-sm">재시도</button>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div id="action-buttons" class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    <button id="save-image-button" class="w-full btn-secondary font-bold py-3 px-4 rounded-lg">스토리로 저장</button>
+                    <button id="back-button" class="w-full btn-primary font-bold py-3 px-4 rounded-lg">처음으로</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM ELEMENTS
+    const inputScreen = document.getElementById('input-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const monthSelect = document.getElementById('month');
+    const daySelect = document.getElementById('day');
+    const submitButton = document.getElementById('submit-button');
+    const backButton = document.getElementById('back-button');
+    const saveImageButton = document.getElementById('save-image-button');
+    const langKoButton = document.getElementById('lang-ko');
+    const langEnButton = document.getElementById('lang-en');
+    const loadingIndicator = document.getElementById('loading');
+    const apiError = document.getElementById('api-error');
+    const retryButton = document.getElementById('retry-button');
+    const storyContent = document.getElementById('story-content');
+    const flowerImage = document.getElementById('flower-image');
+    const inputError = document.getElementById('input-error');
+    const actionButtons = document.getElementById('action-buttons');
+    
+    // STATE
+    let currentLanguage = 'ko';
+    let generatedImageUrl = '';
+    let lastFlowerData = null;
+
+    // DATA - 366 Days of Birth Flowers
+    const birthFlowerData = [
+        { month: 1, day: 1, flower_ko: "스노드롭", flower_en: "Snowdrop", keywords_ko: "희망, 위안", keywords_en: "Hope, Consolation", description_ko: "새해 첫날, 순수한 마음으로 희망을 품는 당신.", description_en: "On the first day of the year, you hold hope with a pure heart.", good_match_ko: "은방울꽃", good_match_en: "Lily of the Valley", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 1, day: 2, flower_ko: "노랑 수선화", flower_en: "Jonquil", keywords_ko: "사랑에 답하여", keywords_en: "Answering Love", description_ko: "자신을 사랑할 줄 아는 당신은 다른 사람의 사랑에도 화답할 줄 압니다.", description_en: "Knowing how to love yourself, you also know how to respond to others' love.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "미나리아재비", bad_match_en: "Buttercup" },
+        { month: 1, day: 3, flower_ko: "사프란", flower_en: "Saffron", keywords_ko: "후회 없는 청춘", keywords_en: "Youth Without Regret", description_ko: "매 순간을 소중히 여기며, 후회 없는 젊음을 만들어가는 당신.", description_en: "You cherish every moment, creating a youth without regrets.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "도라지꽃", bad_match_en: "Balloon Flower" },
+        { month: 1, day: 4, flower_ko: "히아신스", flower_en: "Hyacinth", keywords_ko: "겸손한 사랑", keywords_en: "Humble Love", description_ko: "화려함 속에서도 겸손함을 잃지 않는 당신의 사랑은 더욱 빛납니다.", description_en: "Your love, which does not lose humility amidst splendor, shines even brighter.", good_match_ko: "튤립", good_match_en: "Tulip", bad_match_ko: "과꽃", bad_match_en: "China Aster" },
+        { month: 1, day: 5, flower_ko: "애기동백", flower_en: "Camellia", keywords_ko: "겸손, 이상적인 사랑", keywords_en: "Humility, Ideal Love", description_ko: "겸손한 마음으로 이상적인 사랑을 꿈꾸는 당신은 신뢰를 줍니다.", description_en: "Dreaming of ideal love with a humble heart, you inspire trust.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "라일락", bad_match_en: "Lilac" },
+        { month: 1, day: 6, flower_ko: "흰제비꽃", flower_en: "White Violet", keywords_ko: "순진무구한 사랑", keywords_en: "Innocent Love", description_ko: "순수하고 깨끗한 당신의 사랑은 주변을 맑게 만듭니다.", description_en: "Your pure and clean love purifies your surroundings.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "수국", bad_match_en: "Hydrangea" },
+        { month: 1, day: 7, flower_ko: "튤립", flower_en: "Tulip", keywords_ko: "사랑의 고백", keywords_en: "Confession of Love", description_ko: "사랑의 기쁨과 아픔을 아는 당신은 진실된 고백을 할 줄 압니다.", description_en: "Knowing the joys and sorrows of love, you know how to make a sincere confession.", good_match_ko: "프리지아", good_match_en: "Freesia", bad_match_ko: "안개꽃", bad_match_en: "Baby's Breath" },
+        { month: 1, day: 8, flower_ko: "보랏빛 제비꽃", flower_en: "Purple Violet", keywords_ko: "사랑, 성실", keywords_en: "Love, Sincerity", description_ko: "성실한 마음으로 사랑을 키워나가는 당신은 매력적입니다.", description_en: "You are attractive, nurturing love with a sincere heart.", good_match_ko: "라벤더", good_match_en: "Lavender", bad_match_ko: "국화", bad_match_en: "Chrysanthemum" },
+        { month: 1, day: 9, flower_ko: "노랑 제비꽃", flower_en: "Yellow Violet", keywords_ko: "수줍은 사랑", keywords_en: "Shy Love", description_ko: "수줍음 속에 따뜻한 사랑을 품고 있는 당신.", description_en: "You hold a warm love within your shyness.", good_match_ko: "민들레", good_match_en: "Dandelion", bad_match_ko: "코스모스", bad_match_en: "Cosmos" },
+        { month: 1, day: 10, flower_ko: "회양목", flower_en: "Boxwood", keywords_ko: "참고 견뎌냄", keywords_en: "Endurance", description_ko: "어려움을 참고 견디는 강한 의지로 목표를 이룹니다.", description_en: "You achieve your goals with a strong will to endure hardships.", good_match_ko: "소나무", good_match_en: "Pine", bad_match_ko: "대나무", bad_match_en: "Bamboo" },
+        { month: 1, day: 11, flower_ko: "측백나무", flower_en: "Arborvitae", keywords_ko: "견고한 우정", keywords_en: "Solid Friendship", description_ko: "한 번 맺은 우정을 소중히 여기는 당신은 든든한 친구입니다.", description_en: "Cherishing the friendships you've made, you are a reliable friend.", good_match_ko: "단풍나무", good_match_en: "Maple", bad_match_ko: "버드나무", bad_match_en: "Willow" },
+        { month: 1, day: 12, flower_ko: "스위트피", flower_en: "Sweet Pea", keywords_ko: "우아한 추억", keywords_en: "Elegant Memories", description_ko: "아름다운 추억을 간직하며 삶을 풍요롭게 만듭니다.", description_en: "You enrich your life by cherishing beautiful memories.", good_match_ko: "작약", good_match_en: "Peony", bad_match_ko: "매화", bad_match_en: "Plum Blossom" },
+        { month: 1, day: 13, flower_ko: "수선화", flower_en: "Narcissus", keywords_ko: "신비, 자존심", keywords_en: "Mystery, Pride", description_ko: "신비로운 매력과 강한 자존심을 가진 당신, 자신을 사랑할 줄 압니다.", description_en: "With mysterious charm and strong pride, you know how to love yourself.", good_match_ko: "아이리스", good_match_en: "Iris", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 1, day: 14, flower_ko: "시클라멘", flower_en: "Cyclamen", keywords_ko: "수줍음, 내성적", keywords_en: "Shyness, Introversion", description_ko: "수줍음 속에 깊은 애정을 숨기고 있는 당신.", description_en: "You hide deep affection within your shyness.", good_match_ko: "앵초", good_match_en: "Primrose", bad_match_ko: "글라디올러스", bad_match_en: "Gladiolus" },
+        { month: 1, day: 15, flower_ko: "가시", flower_en: "Thorn", keywords_ko: "엄격, 경고", keywords_en: "Strictness, Warning", description_ko: "엄격함 속에 더 나은 방향을 제시하는 지혜를 가졌습니다.", description_en: "You have the wisdom to suggest a better direction within strictness.", good_match_ko: "엉겅퀴", good_match_en: "Thistle", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 1, day: 16, flower_ko: "노란 히아신스", flower_en: "Yellow Hyacinth", keywords_ko: "승부", keywords_en: "Competition", description_ko: "경쟁을 즐기며 최고의 자리를 향해 노력합니다.", description_en: "You enjoy competition and strive for the top.", good_match_ko: "투구꽃", good_match_en: "Monkshood", bad_match_ko: "흰 히아신스", bad_match_en: "White Hyacinth" },
+        { month: 1, day: 17, flower_ko: "수영", flower_en: "Rumex", keywords_ko: "애정, 친근함", keywords_en: "Affection, Friendliness", description_ko: "다정한 성격으로 주변에 따뜻한 애정을 나눕니다.", description_en: "With a gentle personality, you share warm affection with those around you.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "독말풀", bad_match_en: "Datura" },
+        { month: 1, day: 18, flower_ko: "어저귀", flower_en: "Indian Mallow", keywords_ko: "억측", keywords_en: "Speculation", description_ko: "풍부한 상상력은 때로 섣부른 판단을 낳을 수 있으니 주의가 필요합니다.", description_en: "A rich imagination can sometimes lead to hasty judgments, so caution is needed.", good_match_ko: "안개꽃", good_match_en: "Baby's Breath", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 1, day: 19, flower_ko: "소나무", flower_en: "Pine", keywords_ko: "용감", keywords_en: "Brave", description_ko: "늘 푸른 소나무처럼 어떤 시련에도 굴하지 않는 용기를 가졌습니다.", description_en: "Like an evergreen pine, you have the courage to not yield to any ordeal.", good_match_ko: "대나무", good_match_en: "Bamboo", bad_match_ko: "벚나무", bad_match_en: "Cherry Tree" },
+        { month: 1, day: 20, flower_ko: "미나리아재비", flower_en: "Buttercup", keywords_ko: "천진난만", keywords_en: "Innocence", description_ko: "아이처럼 순수한 마음으로 주변을 밝게 만듭니다.", description_en: "You brighten your surroundings with a heart as pure as a child's.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "라넌큘러스", bad_match_en: "Ranunculus" },
+        { month: 1, day: 21, flower_ko: "담쟁이덩굴", flower_en: "Ivy", keywords_ko: "우정, 신의", keywords_en: "Friendship, Fidelity", description_ko: "변치 않는 신의로 우정을 지키는 믿음직한 사람입니다.", description_en: "You are a trustworthy person who keeps friendships with unwavering fidelity.", good_match_ko: "포도", good_match_en: "Grape", bad_match_ko: "겨우살이", bad_match_en: "Mistletoe" },
+        { month: 1, day: 22, flower_ko: "이끼", flower_en: "Moss", keywords_ko: "모성애", keywords_en: "Maternal Love", description_ko: "조용하지만 따뜻한 모성애와 같은 깊은 사랑을 품고 있습니다.", description_en: "Quietly, you hold a deep love like a mother's affection.", good_match_ko: "고사리", good_match_en: "Fern", bad_match_ko: "난초", bad_match_en: "Orchid" },
+        { month: 1, day: 23, flower_ko: "부들", flower_en: "Bulrush", keywords_ko: "순종", keywords_en: "Obedience", description_ko: "공동체의 조화를 위해 기꺼이 순응하는 지혜를 가졌습니다.", description_en: "You have the wisdom to willingly conform for the harmony of the community.", good_match_ko: "갈대", good_match_en: "Reed", bad_match_ko: "엉겅퀴", bad_match_en: "Thistle" },
+        { month: 1, day: 24, flower_ko: "가을에 피는 사프란", flower_en: "Autumn Crocus", keywords_ko: "지나간 좋은 시절", keywords_en: "Good Old Days", description_ko: "아름다운 추억을 바탕으로 현재를 살아가는 힘을 얻습니다.", description_en: "You gain the strength to live in the present based on beautiful memories.", good_match_ko: "국화", good_match_en: "Chrysanthemum", bad_match_ko: "크로커스", bad_match_en: "Crocus" },
+        { month: 1, day: 25, flower_ko: "점나도나물", flower_en: "Cerastium", keywords_ko: "순박", keywords_en: "Simplicity", description_ko: "꾸밈없는 순박함으로 사람들에게 진실되게 다가갑니다.", description_en: "You approach people sincerely with unadorned simplicity.", good_match_ko: "패랭이꽃", good_match_en: "Dianthus", bad_match_ko: "베고니아", bad_match_en: "Begonia" },
+        { month: 1, day: 26, flower_ko: "미모사", flower_en: "Mimosa", keywords_ko: "예민한 마음", keywords_en: "Sensitive Heart", description_ko: "감수성이 풍부하여 작은 것에도 마음이 움직이는 섬세한 사람.", description_en: "A delicate person, your sensitive heart is moved by the smallest things.", good_match_ko: "자귀나무", good_match_en: "Silk Tree", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 1, day: 27, flower_ko: "마가목", flower_en: "Rowan", keywords_ko: "게으름 없는 마음", keywords_en: "A Mind Without Laziness", description_ko: "맡은 일에 책임감을 갖고 성실하게 임하는 부지런한 사람입니다.", description_en: "You are a diligent person who takes responsibility and works sincerely.", good_match_ko: "떡갈나무", good_match_en: "Oak", bad_match_ko: "포플러", bad_match_en: "Poplar" },
+        { month: 1, day: 28, flower_ko: "검은 포플러", flower_en: "Black Poplar", keywords_ko: "용기", keywords_en: "Courage", description_ko: "어려움에 맞서는 용기를 가진 당신은 리더의 자질을 갖췄습니다.", description_en: "With the courage to face difficulties, you have the qualities of a leader.", good_match_ko: "미루나무", good_match_en: "Cottonwood", bad_match_ko: "버드나무", bad_match_en: "Willow" },
+        { month: 1, day: 29, flower_ko: "이끼", flower_en: "Moss", keywords_ko: "모성애", keywords_en: "Maternal Love", description_ko: "주변을 따뜻하게 보살피는 깊은 모성애를 가졌습니다.", description_en: "You have a deep maternal love that warmly cares for those around you.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "동백", bad_match_en: "Camellia" },
+        { month: 1, day: 30, flower_ko: "매쉬 메리골드", flower_en: "Marsh Marigold", keywords_ko: "반드시 올 행복", keywords_en: "Inevitable Happiness", description_ko: "긍정적인 마음을 잃지 않는 당신에게는 반드시 행복이 찾아옵니다.", description_en: "To you who never loses a positive mind, happiness will surely come.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "아네모네", bad_match_en: "Anemone" },
+        { month: 1, day: 31, flower_ko: "노란 사프란", flower_en: "Yellow Saffron", keywords_ko: "청춘의 환희", keywords_en: "Joy of Youth", description_ko: "밝고 활기찬 에너지로 청춘의 기쁨을 누립니다.", description_en: "You enjoy the joy of youth with bright and vibrant energy.", good_match_ko: "크로커스", good_match_en: "Crocus", bad_match_ko: "콜치쿰", bad_match_en: "Colchicum" },
+        { month: 2, day: 1, flower_ko: "앵초", flower_en: "Primrose", keywords_ko: "젊음과 고뇌", keywords_en: "Youth and Anguish", description_ko: "젊음의 열정과 성장의 고뇌를 함께 간직한 당신.", description_en: "You hold both the passion of youth and the anguish of growth.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 2, day: 2, flower_ko: "모과", flower_en: "Quince", keywords_ko: "평범, 조숙", keywords_en: "Ordinary, Precocious", description_ko: "평범해 보이지만 내면에는 성숙한 지혜를 품고 있습니다.", description_en: "Seemingly ordinary, you hold mature wisdom within.", good_match_ko: "사과나무", good_match_en: "Apple Tree", bad_match_ko: "복숭아나무", bad_match_en: "Peach Tree" },
+        { month: 2, day: 3, flower_ko: "황새냉이", flower_en: "Cardamine", keywords_ko: "그대에게 바친다", keywords_en: "I Dedicate to You", description_ko: "사랑하는 사람을 위해 헌신하는 순수한 마음을 가졌습니다.", description_en: "You have a pure heart, dedicated to the one you love.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 2, day: 4, flower_ko: "빨간 앵초", flower_en: "Red Primrose", keywords_ko: "돌보지 않는 아름다움", keywords_en: "Uncared-for Beauty", description_ko: "꾸미지 않아도 자연스럽게 빛나는 진정한 매력의 소유자.", description_en: "The owner of true charm that shines naturally without adornment.", good_match_ko: "야생장미", good_match_en: "Wild Rose", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 2, day: 5, flower_ko: "양치", flower_en: "Fern", keywords_ko: "사랑스러움, 성실", keywords_en: "Loveliness, Sincerity", description_ko: "성실함으로 사랑받는 당신은 싱그러운 매력을 가졌습니다.", description_en: "Loved for your sincerity, you have a fresh charm.", good_match_ko: "이끼", good_match_en: "Moss", bad_match_ko: "난초", bad_match_en: "Orchid" },
+        { month: 2, day: 6, flower_ko: "바위솔", flower_en: "Rock Pine", keywords_ko: "가사에 근면", keywords_en: "Diligence in Household Affairs", description_ko: "자신이 속한 공간을 평화롭게 만드는 책임감 강한 사람입니다.", description_en: "A responsible person who makes their space peaceful.", good_match_ko: "회양목", good_match_en: "Boxwood", bad_match_ko: "덩굴 식물", bad_match_en: "Vine Plant" },
+        { month: 2, day: 7, flower_ko: "물망초", flower_en: "Forget-me-not", keywords_ko: "나를 잊지 말아요", keywords_en: "Do Not Forget Me", description_ko: "맺은 인연을 소중히 여기며, 깊은 인상을 남깁니다.", description_en: "You cherish relationships and leave a deep impression.", good_match_ko: "팬지", good_match_en: "Pansy", bad_match_ko: "튤립", bad_match_en: "Tulip" },
+        { month: 2, day: 8, flower_ko: "범의귀", flower_en: "Saxifrage", keywords_ko: "절실한 사랑", keywords_en: "Earnest Love", description_ko: "어려움 속에서도 사랑을 쟁취하는 열정을 가졌습니다.", description_en: "You have the passion to win love even in difficult situations.", good_match_ko: "에델바이스", good_match_en: "Edelweiss", bad_match_ko: "수련", bad_match_en: "Water Lily" },
+        { month: 2, day: 9, flower_ko: "은매화", flower_en: "Myrtle", keywords_ko: "사랑의 속삭임", keywords_en: "Whisper of Love", description_ko: "달콤한 말로 애정을 표현하는 로맨티스트.", description_en: "A romantic who expresses affection with sweet words.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "엉겅퀴", bad_match_en: "Thistle" },
+        { month: 2, day: 10, flower_ko: "서향", flower_en: "Winter Daphne", keywords_ko: "영광, 불멸", keywords_en: "Glory, Immortality", description_ko: "추위를 이겨내는 당신의 업적은 오래도록 기억될 것입니다.", description_en: "Overcoming the cold, your achievements will be long remembered.", good_match_ko: "월계수", good_match_en: "Laurel", bad_match_ko: "아네모네", bad_match_en: "Anemone" },
+        { month: 2, day: 11, flower_ko: "멜리사", flower_en: "Melissa", keywords_ko: "동정", keywords_en: "Sympathy", description_ko: "다른 사람의 아픔에 공감하고 위로하는 따뜻한 마음을 가졌습니다.", description_en: "You have a warm heart that sympathizes with and comforts others' pain.", good_match_ko: "캐모마일", good_match_en: "Chamomile", bad_match_ko: "디기탈리스", bad_match_en: "Foxglove" },
+        { month: 2, day: 12, flower_ko: "쥐꼬리망초", flower_en: "Justicia Procumbens", keywords_ko: "가련미의 극치", keywords_en: "Pinnacle of Pitiable Beauty", description_ko: "보호본능을 자극하는 섬세하고 여린 아름다움을 지녔습니다.", description_en: "You possess a delicate and fragile beauty that awakens protective instincts.", good_match_ko: "흰제비꽃", good_match_en: "White Violet", bad_match_ko: "아마릴리스", bad_match_en: "Amaryllis" },
+        { month: 2, day: 13, flower_ko: "갈풀", flower_en: "Canary Grass", keywords_ko: "끈기", keywords_en: "Perseverance", description_ko: "포기하지 않고 끝까지 해내는 강한 끈기를 가졌습니다.", description_en: "You have the strong perseverance to see things through to the end.", good_match_ko: "대나무", good_match_en: "Bamboo", bad_match_ko: "미모사", bad_match_en: "Mimosa" },
+        { month: 2, day: 14, flower_ko: "캐모마일", flower_en: "Chamomile", keywords_ko: "역경에 굴하지 않는 강인함", keywords_en: "Strength in Adversity", description_ko: "역경을 딛고 일어서는 강인한 사람입니다.", description_en: "You are a strong person who rises above adversity.", good_match_ko: "라벤더", good_match_en: "Lavender", bad_match_ko: "양귀비", bad_match_en: "Poppy" },
+        { month: 2, day: 15, flower_ko: "삼나무", flower_en: "Cedar", keywords_ko: "그대를 위해 살다", keywords_en: "I Live for You", description_ko: "사랑하는 사람을 든든하게 지켜주는 헌신적인 사람입니다.", description_en: "You are a devoted person who reliably protects your loved ones.", good_match_ko: "소나무", good_match_en: "Pine", bad_match_ko: "버드나무", bad_match_en: "Willow" },
+        { month: 2, day: 16, flower_ko: "월계수", flower_en: "Laurel", keywords_ko: "명예", keywords_en: "Honor", description_ko: "뛰어난 성취로 명예와 영광을 얻게 될 것입니다.", description_en: "You will gain honor and glory through outstanding achievements.", good_match_ko: "올리브", good_match_en: "Olive", bad_match_ko: "협죽도", bad_match_en: "Oleander" },
+        { month: 2, day: 17, flower_ko: "야생화", flower_en: "Wildflower", keywords_ko: "친숙한 자연", keywords_en: "Familiar Nature", description_ko: "꾸밈없는 자연의 아름다움을 사랑하는 편안한 사람입니다.", description_en: "A comfortable person who loves the unadorned beauty of nature.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "온실 꽃", bad_match_en: "Greenhouse Flower" },
+        { month: 2, day: 18, flower_ko: "미나리아재비", flower_en: "Buttercup", keywords_ko: "천진난만", keywords_en: "Innocence", description_ko: "순수하고 밝은 에너지로 주변에 웃음을 줍니다.", description_en: "You bring laughter to your surroundings with pure, bright energy.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "흑장미", bad_match_en: "Black Rose" },
+        { month: 2, day: 19, flower_ko: "떡갈나무", flower_en: "Oak", keywords_ko: "붙임성 좋음", keywords_en: "Sociable", description_ko: "누구와도 쉽게 어울리는 친화력을 가졌습니다.", description_en: "You have the sociability to get along easily with anyone.", good_match_ko: "마가목", good_match_en: "Rowan", bad_match_ko: "유칼립투스", bad_match_en: "Eucalyptus" },
+        { month: 2, day: 20, flower_ko: "칼미아", flower_en: "Kalmia", keywords_ko: "커다란 희망", keywords_en: "Great Hope", description_ko: "큰 희망을 품고 미래를 향해 나아가는 긍정적인 사람입니다.", description_en: "A positive person moving toward the future with great hope.", good_match_ko: "진달래", good_match_en: "Azalea", bad_match_ko: "시클라멘", bad_match_en: "Cyclamen" },
+        { month: 2, day: 21, flower_ko: "네모필라", flower_en: "Nemophila", keywords_ko: "어디서나 성공", keywords_en: "Success Anywhere", description_ko: "어떤 환경에서도 뛰어난 적응력으로 성공을 이룹니다.", description_en: "You achieve success in any environment with excellent adaptability.", good_match_ko: "수레국화", good_match_en: "Cornflower", bad_match_ko: "앵무새튤립", bad_match_en: "Parrot Tulip" },
+        { month: 2, day: 22, flower_ko: "무궁화", flower_en: "Rose of Sharon", keywords_ko: "섬세한 아름다움", keywords_en: "Delicate Beauty", description_ko: "은은하면서도 끈기 있는 아름다움을 지닌 외유내강의 표본.", description_en: "The epitome of 'soft outside, strong inside' with a subtle yet persistent beauty.", good_match_ko: "목련", good_match_en: "Magnolia", bad_match_ko: "라플레시아", bad_match_en: "Rafflesia" },
+        { month: 2, day: 23, flower_ko: "살구꽃", flower_en: "Apricot Blossom", keywords_ko: "아가씨의 수줍음", keywords_en: "Maiden's Shyness", description_ko: "수줍음 속에 사랑스러운 매력을 숨기고 있습니다.", description_en: "Hiding lovely charm within shyness.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "복숭아꽃", bad_match_en: "Peach Blossom" },
+        { month: 2, day: 24, flower_ko: "빙카", flower_en: "Periwinkle", keywords_ko: "즐거운 추억", keywords_en: "Pleasant Memories", description_ko: "즐거운 추억을 현재를 살아가는 힘으로 삼습니다.", description_en: "You use pleasant memories as strength to live in the present.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "매리골드", bad_match_en: "Marigold" },
+        { month: 2, day: 25, flower_ko: "사향장미", flower_en: "Musk Rose", keywords_ko: "변덕스러운 사랑", keywords_en: "Capricious Love", description_ko: "예측할 수 없는 매력으로 상대방의 마음을 사로잡습니다.", description_en: "You captivate others with your unpredictable charm.", good_match_ko: "스위트피", good_match_en: "Sweet Pea", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 2, day: 26, flower_ko: "아도니스", flower_en: "Adonis", keywords_ko: "영원한 행복", keywords_en: "Eternal Happiness", description_ko: "슬픈 전설 속에서도 영원한 행복의 가치를 아는 깊이 있는 사람.", description_en: "A profound person who knows the value of eternal happiness even in a sad legend.", good_match_ko: "아네모네", good_match_en: "Anemone", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 2, day: 27, flower_ko: "아라비아의 별", flower_en: "Star of Arabia", keywords_ko: "순수, 총명", keywords_en: "Purity, Intelligence", description_ko: "순수한 마음과 명석한 두뇌를 가진 지혜로운 해결사.", description_en: "A wise problem-solver with a pure heart and a brilliant mind.", good_match_ko: "오렌지꽃", good_match_en: "Orange Blossom", bad_match_ko: "디기탈리스", bad_match_en: "Foxglove" },
+        { month: 2, day: 28, flower_ko: "보리", flower_en: "Barley", keywords_ko: "일치단결", keywords_en: "Unity", description_ko: "사람들을 하나로 모으는 리더십을 가지고 있습니다.", description_en: "You have the leadership to bring people together.", good_match_ko: "밀", good_match_en: "Wheat", bad_match_ko: "귀리", bad_match_en: "Oats" },
+        { month: 2, day: 29, flower_ko: "아르메리아", flower_en: "Armeria", keywords_ko: "배려, 동정", keywords_en: "Consideration, Sympathy", description_ko: "특별한 날에 태어난 당신은 다른 사람을 먼저 생각하는 깊은 배려심을 가졌습니다.", description_en: "Born on a special day, you have a deep consideration for others.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 3, day: 1, flower_ko: "수선화", flower_en: "Daffodil", keywords_ko: "자존, 신비", keywords_en: "Self-esteem, Mystery", description_ko: "강한 자존감으로 신비로운 분위기를 만드는 매력적인 사람.", description_en: "A charming person who creates a mysterious atmosphere with strong self-esteem.", good_match_ko: "튤립", good_match_en: "Tulip", bad_match_ko: "양귀비", bad_match_en: "Poppy" },
+        { month: 3, day: 2, flower_ko: "미나리아재비", flower_en: "Ranunculus", keywords_ko: "아름다운 인격", keywords_en: "Beautiful Personality", description_ko: "외모보다 빛나는 아름다운 인격을 가진 내면이 강한 사람.", description_en: "A person with a strong inner self and a beautiful personality that shines.", good_match_ko: "작약", good_match_en: "Peony", bad_match_ko: "버터컵", bad_match_en: "Buttercup" },
+        { month: 3, day: 3, flower_ko: "자두꽃", flower_en: "Plum Blossom", keywords_ko: "순백, 아름다움", keywords_en: "Purity, Beauty", description_ko: "깨끗하고 순수한 아름다움으로 주변에 맑은 영감을 줍니다.", description_en: "With pure beauty, you give clear inspiration to your surroundings.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "복숭아꽃", bad_match_en: "Peach Blossom" },
+        { month: 3, day: 4, flower_ko: "산딸기", flower_en: "Raspberry", keywords_ko: "애정, 존경", keywords_en: "Affection, Respect", description_ko: "깊은 애정과 존경심을 표현할 줄 아는 성숙한 사람입니다.", description_en: "A mature person who knows how to express deep affection and respect.", good_match_ko: "딸기", good_match_en: "Strawberry", bad_match_ko: "블랙베리", bad_match_en: "Blackberry" },
+        { month: 3, day: 5, flower_ko: "수레국화", flower_en: "Cornflower", keywords_ko: "행복감", keywords_en: "Happiness", description_ko: "소박한 일상 속에서 행복을 발견하는 긍정적인 마음을 가졌습니다.", description_en: "You have a positive mind that finds happiness in simple daily life.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "엉겅퀴", bad_match_en: "Thistle" },
+        { month: 3, day: 6, flower_ko: "데이지", flower_en: "Daisy", keywords_ko: "명랑, 순수한 마음", keywords_en: "Cheerful, Pure Heart", description_ko: "밝고 명랑한 에너지로 주변을 환하게 만드는 순수한 마음의 소유자.", description_en: "The owner of a pure heart, brightening surroundings with cheerful energy.", good_match_ko: "민들레", good_match_en: "Dandelion", bad_match_ko: "국화", bad_match_en: "Chrysanthemum" },
+        { month: 3, day: 7, flower_ko: "황새냉이", flower_en: "Cuckoo Flower", keywords_ko: "사무치는 그리움", keywords_en: "Burning Nostalgia", description_ko: "과거의 추억을 깊이 그리워하는 감성적이고 로맨틱한 사람.", description_en: "A sentimental and romantic person who deeply misses past memories.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 3, day: 8, flower_ko: "양골담초", flower_en: "Broom", keywords_ko: "겸손, 청초", keywords_en: "Humility, Neatness", description_ko: "겸손과 단정함으로 다른 사람에게 신뢰를 줍니다.", description_en: "You inspire trust in others with humility and neatness.", good_match_ko: "헤더", good_match_en: "Heather", bad_match_ko: "히비스커스", bad_match_en: "Hibiscus" },
+        { month: 3, day: 9, flower_ko: "낙엽송", flower_en: "Larch", keywords_ko: "대담, 용기", keywords_en: "Boldness, Courage", description_ko: "어떤 도전에도 대담하게 맞서는 용기를 가진 타고난 모험가.", description_en: "A natural adventurer with the courage to boldly face any challenge.", good_match_ko: "소나무", good_match_en: "Pine", bad_match_ko: "버드나무", bad_match_en: "Willow" },
+        { month: 3, day: 10, flower_ko: "느릅나무", flower_en: "Elm", keywords_ko: "신뢰, 고귀함", keywords_en: "Trust, Nobility", description_ko: "굳건하고 믿음직스러워 주변에 깊은 신뢰를 줍니다.", description_en: "Steadfast and reliable, you give deep trust to those around you.", good_match_ko: "참나무", good_match_en: "Oak", bad_match_ko: "포플러", bad_match_en: "Poplar" },
+        { month: 3, day: 11, flower_ko: "쓴쑥", flower_en: "Wormwood", keywords_ko: "부재, 슬픔", keywords_en: "Absence, Sorrow", description_ko: "깊은 슬픔을 이해하고, 다른 사람의 아픔에 공감할 줄 아는 사람.", description_en: "A person who understands deep sorrow and can empathize with others' pain.", good_match_ko: "국화", good_match_en: "Chrysanthemum", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 3, day: 12, flower_ko: "수양버들", flower_en: "Weeping Willow", keywords_ko: "사랑의 슬픔, 추도", keywords_en: "Sorrow of Love, Mourning", description_ko: "슬픔 속에서도 아름다움을 발견하는 섬세한 감성의 소유자.", description_en: "The owner of a delicate sensibility who finds beauty even in sadness.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 3, day: 13, flower_ko: "산옥잠화", flower_en: "Day Lily", keywords_ko: "사랑의 망각", keywords_en: "Forgetting Love", description_ko: "과거의 아픔을 딛고 새로운 사랑을 향해 나아갈 줄 아는 용기.", description_en: "The courage to overcome past pain and move towards a new love.", good_match_ko: "아이리스", good_match_en: "Iris", bad_match_ko: "아네모네", bad_match_en: "Anemone" },
+        { month: 3, day: 14, flower_ko: "아몬드", flower_en: "Almond", keywords_ko: "진실한 사랑, 희망", keywords_en: "True Love, Hope", description_ko: "진실된 사랑과 희망을 추구하는 순수한 마음.", description_en: "A pure heart that pursues true love and hope.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "매발톱꽃", bad_match_en: "Columbine" },
+        { month: 3, day: 15, flower_ko: "독당근", flower_en: "Poison Hemlock", keywords_ko: "죽음도 아깝지 않음", keywords_en: "Death is Not a Waste", description_ko: "신념을 위해 모든 것을 바칠 수 있는 강한 의지의 소유자.", description_en: "The owner of a strong will who can sacrifice everything for their beliefs.", good_match_ko: "투구꽃", good_match_en: "Monkshood", bad_match_ko: "은방울꽃", bad_match_en: "Lily of the Valley" },
+        { month: 3, day: 16, flower_ko: "박하", flower_en: "Mint", keywords_ko: "미덕, 덕", keywords_en: "Virtue, Morality", description_ko: "상쾌한 박하처럼, 당신의 존재는 주변에 긍정적인 기운을 줍니다.", description_en: "Like refreshing mint, your presence gives positive energy to your surroundings.", good_match_ko: "로즈마리", good_match_en: "Rosemary", bad_match_ko: "바질", bad_match_en: "Basil" },
+        { month: 3, day: 17, flower_ko: "콩꽃", flower_en: "Bean Flower", keywords_ko: "반드시 올 행복", keywords_en: "Inevitable Happiness", description_ko: "작은 씨앗이 풍성한 열매를 맺듯, 당신의 노력은 반드시 행복으로 이어집니다.", description_en: "As a small seed bears abundant fruit, your efforts will surely lead to happiness.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "완두콩꽃", bad_match_en: "Pea Flower" },
+        { month: 3, day: 18, flower_ko: "아스파라거스", flower_en: "Asparagus", keywords_ko: "무변화, 불변", keywords_en: "Unchanging, Immutable", description_ko: "변치 않는 모습으로 묵묵히 자신의 길을 가는 끈기 있는 사람.", description_en: "A persistent person who silently goes their own way with an unchanging appearance.", good_match_ko: "대나무", good_match_en: "Bamboo", bad_match_ko: "미모사", bad_match_en: "Mimosa" },
+        { month: 3, day: 19, flower_ko: "치자나무", flower_en: "Cape Jasmine", keywords_ko: "한없는 즐거움", keywords_en: "Endless Joy", description_ko: "삶의 즐거움을 발견하고, 주변에 긍정적인 에너지를 나누는 사람.", description_en: "A person who discovers the joy of life and shares positive energy with others.", good_match_ko: "오렌지꽃", good_match_en: "Orange Blossom", bad_match_ko: "라벤더", bad_match_en: "Lavender" },
+        { month: 3, day: 20, flower_ko: "보라색 튤립", flower_en: "Purple Tulip", keywords_ko: "영원한 사랑", keywords_en: "Eternal Love", description_ko: "고귀하고 신비로운 당신의 사랑은 영원히 변치 않을 것입니다.", description_en: "Your noble and mysterious love will never change.", good_match_ko: "아이리스", good_match_en: "Iris", bad_match_ko: "노란 튤립", bad_match_en: "Yellow Tulip" },
+        { month: 3, day: 21, flower_ko: "벚꽃란", flower_en: "Cherry Orchid", keywords_ko: "인생의 출발", keywords_en: "The Start of Life", description_ko: "봄의 시작처럼, 새로운 출발에 대한 설렘과 기대로 가득 차 있습니다.", description_en: "Like the beginning of spring, you are full of excitement and anticipation for a new start.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "동백", bad_match_en: "Camellia" },
+        { month: 3, day: 22, flower_ko: "당아욱", flower_en: "Mallow", keywords_ko: "은혜, 자애", keywords_en: "Grace, Benevolence", description_ko: "따뜻한 마음으로 주변에 은혜를 베푸는 자애로운 사람.", description_en: "A benevolent person who bestows grace on their surroundings with a warm heart.", good_match_ko: "접시꽃", good_match_en: "Hollyhock", bad_match_ko: "히비스커스", bad_match_en: "Hibiscus" },
+        { month: 3, day: 23, flower_ko: "글라디올러스", flower_en: "Gladiolus", keywords_ko: "정열적인 사랑, 승리", keywords_en: "Passionate Love, Victory", description_ko: "정열적인 사랑과 승리를 쟁취하는 강한 의지의 소유자.", description_en: "The owner of a strong will who wins passionate love and victory.", good_match_ko: "아마릴리스", good_match_en: "Amaryllis", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 3, day: 24, flower_ko: "금영화", flower_en: "California Poppy", keywords_ko: "희망", keywords_en: "Hope", description_ko: "태양처럼 밝은 희망을 품고, 어려움을 헤쳐나가는 긍정적인 힘.", description_en: "A positive power that overcomes difficulties with hope as bright as the sun.", good_match_ko: "해바라기", good_match_en: "Sunflower", bad_match_ko: "양귀비", bad_match_en: "Poppy" },
+        { month: 3, day: 25, flower_ko: "덩굴성 식물", flower_en: "Climbing Plant", keywords_ko: "아름다움", keywords_en: "Beauty", description_ko: "유연하게 상황에 적응하며, 자신만의 아름다움을 만들어갑니다.", description_en: "You adapt flexibly to situations and create your own beauty.", good_match_ko: "나팔꽃", good_match_en: "Morning Glory", bad_match_ko: "담쟁이덩굴", bad_match_en: "Ivy" },
+        { month: 3, day: 26, flower_ko: "흰앵초", flower_en: "White Primrose", keywords_ko: "첫사랑", keywords_en: "First Love", description_ko: "순수하고 풋풋했던 첫사랑의 기억을 소중히 간직하는 로맨티스트.", description_en: "A romantic who cherishes the memory of a pure and fresh first love.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "빨간 앵초", bad_match_en: "Red Primrose" },
+        { month: 3, day: 27, flower_ko: "칼세올라리아", flower_en: "Calceolaria", keywords_ko: "도움, 원조", keywords_en: "Help, Aid", description_ko: "어려움에 처한 사람에게 기꺼이 도움의 손길을 내미는 따뜻한 마음.", description_en: "A warm heart that willingly extends a helping hand to those in need.", good_match_ko: "팬지", good_match_en: "Pansy", bad_match_ko: "페튜니아", bad_match_en: "Petunia" },
+        { month: 3, day: 28, flower_ko: "꽃아카시아나무", flower_en: "Robinia Hispida", keywords_ko: "품위", keywords_en: "Dignity", description_ko: "어떤 상황에서도 품위를 잃지 않는 고상한 매력의 소유자.", description_en: "The owner of a noble charm who never loses dignity in any situation.", good_match_ko: "아카시아", good_match_en: "Acacia", bad_match_ko: "등나무", bad_match_en: "Wisteria" },
+        { month: 3, day: 29, flower_ko: "우엉", flower_en: "Burdock", keywords_ko: "괴롭히지 말아요", keywords_en: "Don't Tease Me", description_ko: "강해 보이는 겉모습과 달리, 내면은 섬세하고 여린 사람.", description_en: "Unlike your strong appearance, you are delicate and soft on the inside.", good_match_ko: "엉겅퀴", good_match_en: "Thistle", bad_match_ko: "민들레", bad_match_en: "Dandelion" },
+        { month: 3, day: 30, flower_ko: "금작화", flower_en: "Broom", keywords_ko: "청초, 박애", keywords_en: "Neatness, Philanthropy", description_ko: "깨끗하고 순수한 마음으로 모든 사람을 사랑하는 박애주의자.", description_en: "A philanthropist who loves everyone with a clean and pure heart.", good_match_ko: "헤더", good_match_en: "Heather", bad_match_ko: "히비스커스", bad_match_en: "Hibiscus" },
+        { month: 3, day: 31, flower_ko: "흑종초", flower_en: "Nigella", keywords_ko: "꿈길의 애정", keywords_en: "Love in a Dream Path", description_ko: "현실과 꿈의 경계에서 신비로운 사랑을 꿈꾸는 몽상가.", description_en: "A dreamer who dreams of a mysterious love on the border between reality and dreams.", good_match_ko: "양귀비", good_match_en: "Poppy", bad_match_ko: "델피니움", bad_match_en: "Delphinium" },
+        { month: 4, day: 1, flower_ko: "아몬드", flower_en: "Almond", keywords_ko: "진실한 사랑, 희망", keywords_en: "True Love, Hope", description_ko: "새로운 시작, 진실된 사랑과 희망을 추구하는 당신.", description_en: "A new beginning, you pursue true love and hope.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "매발톱꽃", bad_match_en: "Columbine" },
+        { month: 4, day: 2, flower_ko: "아네모네", flower_en: "Anemone", keywords_ko: "덧없는 사랑, 기대", keywords_en: "Fleeting Love, Expectation", description_ko: "덧없는 사랑 속에서도 기대를 잃지 않는 순수한 마음.", description_en: "A pure heart that does not lose expectation even in fleeting love.", good_match_ko: "양귀비", good_match_en: "Poppy", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 4, day: 3, flower_ko: "나팔수선화", flower_en: "Trumpet Narcissus", keywords_ko: "존경, 자존심", keywords_en: "Respect, Pride", description_ko: "다른 사람을 존경할 줄 알며, 스스로에 대한 자존심도 강합니다.", description_en: "You know how to respect others and also have strong pride in yourself.", good_match_ko: "수선화", good_match_en: "Narcissus", bad_match_ko: "아이리스", bad_match_en: "Iris" },
+        { month: 4, day: 4, flower_ko: "빨간 아네모네", flower_en: "Red Anemone", keywords_ko: "그대를 사랑해", keywords_en: "I Love You", description_ko: "정열적인 마음으로 사랑을 고백하는 용기 있는 사람.", description_en: "A courageous person who confesses love with a passionate heart.", good_match_ko: "빨간 튤립", good_match_en: "Red Tulip", bad_match_ko: "흰 아네모네", bad_match_en: "White Anemone" },
+        { month: 4, day: 5, flower_ko: "무화과", flower_en: "Fig", keywords_ko: "풍부, 다산", keywords_en: "Abundance, Fertility", description_ko: "풍요로운 마음으로 주변에 많은 것을 나누어주는 사람.", description_en: "A person who shares much with their surroundings with an abundant heart.", good_match_ko: "포도", good_match_en: "Grape", bad_match_ko: "올리브", bad_match_en: "Olive" },
+        { month: 4, day: 6, flower_ko: "아도니스", flower_en: "Adonis", keywords_ko: "영원한 행복, 추억", keywords_en: "Eternal Happiness, Memories", description_ko: "아름다운 추억을 통해 영원한 행복을 꿈꿉니다.", description_en: "You dream of eternal happiness through beautiful memories.", good_match_ko: "아네모네", good_match_en: "Anemone", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 4, day: 7, flower_ko: "공작고사리", flower_en: "Adiantum", keywords_ko: "신명, 애교", keywords_en: "Vivacity, Charm", description_ko: "밝고 활기찬 에너지와 사랑스러운 애교로 주변을 즐겁게 합니다.", description_en: "You delight your surroundings with bright, vibrant energy and lovely charm.", good_match_ko: "양치", good_match_en: "Fern", bad_match_ko: "이끼", bad_match_en: "Moss" },
+        { month: 4, day: 8, flower_ko: "금작화", flower_en: "Broom", keywords_ko: "겸손, 청초", keywords_en: "Humility, Neatness", description_ko: "겸손하고 깨끗한 마음으로 세상을 대합니다.", description_en: "You face the world with a humble and clean heart.", good_match_ko: "헤더", good_match_en: "Heather", bad_match_ko: "히비스커스", bad_match_en: "Hibiscus" },
+        { month: 4, day: 9, flower_ko: "벚나무", flower_en: "Cherry Tree", keywords_ko: "정신적인 아름다움", keywords_en: "Spiritual Beauty", description_ko: "외면의 아름다움을 넘어, 정신적으로 성숙한 아름다움을 추구합니다.", description_en: "Beyond external beauty, you pursue spiritually mature beauty.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "매화", bad_match_en: "Plum Blossom" },
+        { month: 4, day: 10, flower_ko: "빙카", flower_en: "Periwinkle", keywords_ko: "즐거운 추억", keywords_en: "Pleasant Memories", description_ko: "즐거웠던 기억들을 소중히 간직하며 살아갑니다.", description_en: "You live on, cherishing pleasant memories.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "매리골드", bad_match_en: "Marigold" },
+        { month: 4, day: 11, flower_ko: "꽃고비", flower_en: "Polemonium", keywords_ko: "와주세요", keywords_en: "Please Come", description_ko: "사랑하는 사람이 곁에 있기를 바라는 순수한 마음.", description_en: "A pure heart that wishes for a loved one to be by your side.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "에델바이스", bad_match_en: "Edelweiss" },
+        { month: 4, day: 12, flower_ko: "복숭아", flower_en: "Peach", keywords_ko: "사랑의 노예", keywords_en: "Slave of Love", description_ko: "사랑에 모든 것을 바치는 열정적이고 헌신적인 사람.", description_en: "A passionate and devoted person who gives everything for love.", good_match_ko: "자두", good_match_en: "Plum", bad_match_ko: "살구", bad_match_en: "Apricot" },
+        { month: 4, day: 13, flower_ko: "페르시아 국화", flower_en: "Persian Chrysanthemum", keywords_ko: "경쟁심", keywords_en: "Competitiveness", description_ko: "경쟁을 통해 스스로를 발전시키는 것을 즐깁니다.", description_en: "You enjoy developing yourself through competition.", good_match_ko: "국화", good_match_en: "Chrysanthemum", bad_match_ko: "데이지", bad_match_en: "Daisy" },
+        { month: 4, day: 14, flower_ko: "흰나팔꽃", flower_en: "White Morning Glory", keywords_ko: "넘치는 기쁨", keywords_en: "Overflowing Joy", description_ko: "삶의 기쁨을 온몸으로 느끼고 표현할 줄 아는 사람.", description_en: "A person who knows how to feel and express the joy of life with their whole body.", good_match_ko: "나팔꽃", good_match_en: "Morning Glory", bad_match_ko: "메꽃", bad_match_en: "Bindweed" },
+        { month: 4, day: 15, flower_ko: "펜 오키드", flower_en: "Fen Orchid", keywords_ko: "훌륭함", keywords_en: "Excellence", description_ko: "모든 면에서 뛰어난 재능을 가진 훌륭한 사람.", description_en: "An excellent person with outstanding talent in all aspects.", good_match_ko: "난초", good_match_en: "Orchid", bad_match_ko: "숙근 아스터", bad_match_en: "Michaelmas Daisy" },
+        { month: 4, day: 16, flower_ko: "튤립", flower_en: "Tulip", keywords_ko: "아름다운 눈동자", keywords_en: "Beautiful Eyes", description_ko: "아름다운 눈으로 세상을 바라보는, 맑고 순수한 영혼의 소유자.", description_en: "The owner of a clear and pure soul who sees the world with beautiful eyes.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 4, day: 17, flower_ko: "독일 창포", flower_en: "German Iris", keywords_ko: "멋진 결혼", keywords_en: "Wonderful Marriage", description_ko: "안정되고 행복한 결혼 생활을 꿈꾸고 만들어갑니다.", description_en: "You dream of and create a stable and happy married life.", good_match_ko: "아이리스", good_match_en: "Iris", bad_match_ko: "붓꽃", bad_match_en: "Fleur-de-lis" },
+        { month: 4, day: 18, flower_ko: "자운영", flower_en: "Astragalus", keywords_ko: "감화, 나의 행복", keywords_en: "Influence, My Happiness", description_ko: "당신의 행복이 주변 사람들에게 긍정적인 영향을 줍니다.", description_en: "Your happiness positively influences those around you.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "알팔파", bad_match_en: "Alfalfa" },
+        { month: 4, day: 19, flower_ko: "참제비고깔", flower_en: "Larkspur", keywords_ko: "자유, 청명", keywords_en: "Freedom, Clarity", description_ko: "자유로운 영혼으로, 맑고 깨끗한 삶을 추구합니다.", description_en: "With a free spirit, you pursue a clear and clean life.", good_match_ko: "델피니움", good_match_en: "Delphinium", bad_match_ko: "금어초", bad_match_en: "Snapdragon" },
+        { month: 4, day: 20, flower_ko: "배나무", flower_en: "Pear Tree", keywords_ko: "온화한 애정", keywords_en: "Gentle Affection", description_ko: "부드럽고 온화한 애정으로 주변을 따뜻하게 만드는 사람.", description_en: "A person who warms their surroundings with gentle and mild affection.", good_match_ko: "사과나무", good_match_en: "Apple Tree", bad_match_ko: "모과나무", bad_match_en: "Quince Tree" },
+        { month: 4, day: 21, flower_ko: "수양벚나무", flower_en: "Weeping Cherry", keywords_ko: "정신적인 아름다움, 순결", keywords_en: "Spiritual Beauty, Purity", description_ko: "고결하고 아름다운 정신을 가진, 순수한 영혼의 소유자.", description_en: "The owner of a pure soul with a noble and beautiful spirit.", good_match_ko: "벚나무", good_match_en: "Cherry Tree", bad_match_ko: "수양버들", bad_match_en: "Weeping Willow" },
+        { month: 4, day: 22, flower_ko: "과꽃", flower_en: "China Aster", keywords_ko: "믿음직한 사랑, 추억", keywords_en: "Trustworthy Love, Memories", description_ko: "변치 않는 믿음으로 사랑을 지키며, 아름다운 추억을 만듭니다.", description_en: "You protect love with unchanging faith and create beautiful memories.", good_match_ko: "국화", good_match_en: "Chrysanthemum", bad_match_ko: "데이지", bad_match_en: "Daisy" },
+        { month: 4, day: 23, flower_ko: "도라지", flower_en: "Balloon Flower", keywords_ko: "상냥하고 따뜻함", keywords_en: "Kind and Warm", description_ko: "상냥하고 따뜻한 마음으로 주변 사람들을 편안하게 해줍니다.", description_en: "You make those around you comfortable with a kind and warm heart.", good_match_ko: "초롱꽃", good_match_en: "Bellflower", bad_match_ko: "용담", bad_match_en: "Gentian" },
+        { month: 4, day: 24, flower_ko: "제라늄", flower_en: "Geranium", keywords_ko: "진실한 애정, 결심", keywords_en: "True Affection, Resolution", description_ko: "한번 맺은 인연을 진실된 애정으로 지켜나가는 굳은 결심.", description_en: "A firm resolution to protect the bonds you've made with true affection.", good_match_ko: "페라고늄", good_match_en: "Pelargonium", bad_match_ko: "베고니아", bad_match_en: "Begonia" },
+        { month: 4, day: 25, flower_ko: "중국 패모", flower_en: "Fritillaria Thunbergii", keywords_ko: "위엄, 권위", keywords_en: "Dignity, Authority", description_ko: "타고난 위엄과 카리스마로 사람들을 이끄는 리더.", description_en: "A leader who guides people with natural dignity and charisma.", good_match_ko: "백합", good_match_en: "Lily", bad_match_ko: "패모", bad_match_en: "Fritillary" },
+        { month: 4, day: 26, flower_ko: "논냉이", flower_en: "Cardamine Iyrata", keywords_ko: "불타는 애정", keywords_en: "Burning Affection", description_ko: "뜨겁고 열정적인 사랑을 하는, 불꽃같은 사람.", description_en: "A fire-like person who loves hotly and passionately.", good_match_ko: "황새냉이", good_match_en: "Cuckoo Flower", bad_match_ko: "냉이", bad_match_en: "Shepherd's Purse" },
+        { month: 4, day: 27, flower_ko: "수련", flower_en: "Water Lily", keywords_ko: "청순한 마음", keywords_en: "Pure Heart", description_ko: "깨끗하고 청순한 마음으로 세상을 아름답게 바라봅니다.", description_en: "You see the world beautifully with a clean and pure heart.", good_match_ko: "연꽃", good_match_en: "Lotus", bad_match_ko: "빅토리아 수련", bad_match_en: "Victoria Water Lily" },
+        { month: 4, day: 28, flower_ko: "빨간 앵초", flower_en: "Red Primrose", keywords_ko: "비할 바 없는 아름다움", keywords_en: "Incomparable Beauty", description_ko: "누구와도 비교할 수 없는 자신만의 독특한 아름다움을 가졌습니다.", description_en: "You have your own unique beauty that cannot be compared to anyone else.", good_match_ko: "앵초", good_match_en: "Primrose", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 4, day: 29, flower_ko: "동백나무", flower_en: "Camellia", keywords_ko: "매력, 겸손한 아름다움", keywords_en: "Charm, Humble Beauty", description_ko: "화려하지만 겸손함을 잃지 않는, 깊이 있는 매력의 소유자.", description_en: "The owner of a deep charm, splendid yet never losing humility.", good_match_ko: "애기동백", good_match_en: "Sasanqua Camellia", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 4, day: 30, flower_ko: "금사슬나무", flower_en: "Golden Chain", keywords_ko: "슬픈 아름다움", keywords_en: "Sad Beauty", description_ko: "화려함 속에 어딘가 슬픔을 간직한, 신비로운 분위기.", description_en: "A mysterious atmosphere, holding a touch of sadness within its splendor.", good_match_ko: "등나무", good_match_en: "Wisteria", bad_match_ko: "아카시아", bad_match_en: "Acacia" },
+        { month: 5, day: 1, flower_ko: "은방울꽃", flower_en: "Lily of the Valley", keywords_ko: "섬세함, 행복의 귀환", keywords_en: "Delicacy, Return of Happiness", description_ko: "작고 섬세하지만 주변에 확실한 행복을 가져다주는 소중한 존재.", description_en: "Though small and delicate, you are a precious being that brings certain happiness.", good_match_ko: "스노드롭", good_match_en: "Snowdrop", bad_match_ko: "튤립", bad_match_en: "Tulip" },
+        { month: 5, day: 2, flower_ko: "미나리아재비", flower_en: "Buttercup", keywords_ko: "천진난만, 아름다운 인격", keywords_en: "Innocence, Beautiful Personality", description_ko: "순수하고 아름다운 마음씨로 주변을 밝게 만듭니다.", description_en: "You brighten your surroundings with a pure and beautiful heart.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "라넌큘러스", bad_match_en: "Ranunculus" },
+        { month: 5, day: 3, flower_ko: "민들레", flower_en: "Dandelion", keywords_ko: "사랑의 신탁, 행복", keywords_en: "Oracle of Love, Happiness", description_ko: "어디서든 꿋꿋하게 피어나는 당신은 행복을 전파하는 존재.", description_en: "Blooming steadfastly anywhere, you are a being who spreads happiness.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "엉겅퀴", bad_match_en: "Thistle" },
+        { month: 5, day: 4, flower_ko: "딸기", flower_en: "Strawberry", keywords_ko: "존중과 애정", keywords_en: "Respect and Affection", description_ko: "상대방을 존중하는 마음에서 비롯된 깊은 애정을 가졌습니다.", description_en: "You have a deep affection that stems from a heart of respect.", good_match_ko: "산딸기", good_match_en: "Raspberry", bad_match_ko: "블루베리", bad_match_en: "Blueberry" },
+        { month: 5, day: 5, flower_ko: "은방울꽃", flower_en: "Lily of the Valley", keywords_ko: "순결, 다시 찾은 행복", keywords_en: "Purity, Happiness Found Again", description_ko: "순수한 마음으로 행복을 되찾게 될 것입니다.", description_en: "You will regain happiness with a pure heart.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "백합", bad_match_en: "Lily" },
+        { month: 5, day: 6, flower_ko: "비단향나무꽃", flower_en: "Stock", keywords_ko: "영원한 아름다움", keywords_en: "Eternal Beauty", description_ko: "시간이 지나도 변치 않는, 영원한 아름다움을 추구합니다.", description_en: "You pursue an eternal beauty that does not change over time.", good_match_ko: "카네이션", good_match_en: "Carnation", bad_match_ko: "금어초", bad_match_en: "Snapdragon" },
+        { month: 5, day: 7, flower_ko: "딸기잎", flower_en: "Strawberry Leaves", keywords_ko: "사랑과 존경", keywords_en: "Love and Respect", description_ko: "화려한 열매 뒤에서 묵묵히 지지하는 당신의 사랑은 존경받아 마땅합니다.", description_en: "Your love, silently supporting from behind the splendid fruit, deserves respect.", good_match_ko: "딸기", good_match_en: "Strawberry", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 5, day: 8, flower_ko: "수련", flower_en: "Water Lily", keywords_ko: "청순한 마음", keywords_en: "Pure Heart", description_ko: "깨끗하고 맑은 마음으로 세상을 바라보는 당신.", description_en: "You see the world with a clean and clear heart.", good_match_ko: "연꽃", good_match_en: "Lotus", bad_match_ko: "부레옥잠", bad_match_en: "Water Hyacinth" },
+        { month: 5, day: 9, flower_ko: "겹벚꽃", flower_en: "Double Cherry Blossom", keywords_ko: "정숙, 단아함", keywords_en: "Chastity, Gracefulness", description_ko: "화려함 속에서도 정숙하고 단아한 매력을 잃지 않습니다.", description_en: "You do not lose your chaste and graceful charm amidst splendor.", good_match_ko: "벚꽃", good_match_en: "Cherry Blossom", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 5, day: 10, flower_ko: "꽃창포", flower_en: "Flag Iris", keywords_ko: "우아한 마음, 좋은 소식", keywords_en: "Elegant Heart, Good News", description_ko: "우아한 당신에게 곧 기쁜 소식이 찾아올 것입니다.", description_en: "Good news will soon come to you, the elegant one.", good_match_ko: "아이리스", good_match_en: "Iris", bad_match_ko: "붓꽃", bad_match_en: "Fleur-de-lis" },
+        { month: 5, day: 11, flower_ko: "사과", flower_en: "Apple", keywords_ko: "유혹, 명성", keywords_en: "Temptation, Fame", description_ko: "거부할 수 없는 매력으로 사람들을 이끌고, 명성을 얻게 됩니다.", description_en: "You lead people with irresistible charm and gain fame.", good_match_ko: "오렌지", good_match_en: "Orange", bad_match_ko: "레몬", bad_match_en: "Lemon" },
+        { month: 5, day: 12, flower_ko: "라일락", flower_en: "Lilac", keywords_ko: "첫사랑의 감동, 친구의 사랑", keywords_en: "Thrill of First Love, Friendship's Love", description_ko: "풋풋한 첫사랑의 설렘과 친구 사이의 따뜻한 우정을 모두 소중히 여깁니다.", description_en: "You cherish both the thrill of fresh first love and the warm friendship between friends.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "수국", bad_match_en: "Hydrangea" },
+        { month: 5, day: 13, flower_ko: "산사나무", flower_en: "Hawthorn", keywords_ko: "유일한 사랑, 희망", keywords_en: "The Only Love, Hope", description_ko: "단 하나의 사랑을 굳건히 지켜나가는 희망을 품고 있습니다.", description_en: "You hold the hope of steadfastly protecting the one and only love.", good_match_ko: "사과나무", good_match_en: "Apple Tree", bad_match_ko: "마가목", bad_match_en: "Rowan" },
+        { month: 5, day: 14, flower_ko: "매발톱꽃", flower_en: "Columbine", keywords_ko: "승리의 맹세", keywords_en: "Vow of Victory", description_ko: "어떤 어려움에도 굴하지 않고 반드시 승리하겠다는 굳은 의지.", description_en: "A firm will to never yield to any difficulty and surely achieve victory.", good_match_ko: "델피니움", good_match_en: "Delphinium", bad_match_ko: "투구꽃", bad_match_en: "Monkshood" },
+        { month: 5, day: 15, flower_ko: "물망초", flower_en: "Forget-me-not", keywords_ko: "진실한 사랑, 나를 잊지 말아요", keywords_en: "True Love, Do Not Forget Me", description_ko: "진실된 마음으로 맺은 인연은 결코 잊히지 않습니다.", description_en: "A bond made with a true heart will never be forgotten.", good_match_ko: "팬지", good_match_en: "Pansy", bad_match_ko: "튤립", bad_match_en: "Tulip" },
+        { month: 5, day: 16, flower_ko: "조팝나무", flower_en: "Bridal Wreath", keywords_ko: "선언, 노력", keywords_en: "Declaration, Effort", description_ko: "목표를 향한 굳은 선언과 끊임없는 노력으로 성공을 이룹니다.", description_en: "You achieve success through a firm declaration towards your goal and relentless effort.", good_match_ko: "벚나무", good_match_en: "Cherry Tree", bad_match_ko: "개나리", bad_match_en: "Forsythia" },
+        { month: 5, day: 17, flower_ko: "노란 튤립", flower_en: "Yellow Tulip", keywords_ko: "헛된 사랑, 사랑의 표시", keywords_en: "Hopeless Love, Mark of Love", description_ko: "이루어질 수 없는 사랑에 아파하면서도, 사랑의 감정을 소중히 간직합니다.", description_en: "Though pained by a love that cannot be, you cherish the feeling of love.", good_match_ko: "수선화", good_match_en: "Narcissus", bad_match_ko: "보라색 튤립", bad_match_en: "Purple Tulip" },
+        { month: 5, day: 18, flower_ko: "옥슬립 앵초", flower_en: "Oxlip Primrose", keywords_ko: "첫사랑", keywords_en: "First Love", description_ko: "순수하고 아름다운 첫사랑의 기억을 간직하고 있습니다.", description_en: "You hold the memory of a pure and beautiful first love.", good_match_ko: "앵초", good_match_en: "Primrose", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 5, day: 19, flower_ko: "아리스타타", flower_en: "Aristata", keywords_ko: "보유, 소유", keywords_en: "Possession, Ownership", description_ko: "자신이 가진 것을 소중히 여기고 지킬 줄 아는 사람.", description_en: "A person who knows how to cherish and protect what they have.", good_match_ko: "에리카", good_match_en: "Erica", bad_match_ko: "헤더", bad_match_en: "Heather" },
+        { month: 5, day: 20, flower_ko: "동성초", flower_en: "Wood Sorrel", keywords_ko: "빛나는 마음", keywords_en: "Shining Heart", description_ko: "어둠 속에서도 빛을 잃지 않는, 긍정적이고 밝은 마음의 소유자.", description_en: "The owner of a positive and bright heart that does not lose its light even in darkness.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "괭이밥", bad_match_en: "Sorrel" },
+        { month: 5, day: 21, flower_ko: "담홍색 참제비고깔", flower_en: "Pink Larkspur", keywords_ko: "자유", keywords_en: "Freedom", description_ko: "어디에도 얽매이지 않는 자유로운 영혼.", description_en: "A free spirit, unbound by anything.", good_match_ko: "델피니움", good_match_en: "Delphinium", bad_match_ko: "금어초", bad_match_en: "Snapdragon" },
+        { month: 5, day: 22, flower_ko: "귀고리꽃", flower_en: "Fuchsia", keywords_ko: "열렬한 마음, 겸손한 아름다움", keywords_en: "Ardent Heart, Humble Beauty", description_ko: "열정적인 마음을 겸손한 아름다움 속에 감추고 있습니다.", description_en: "You hide an ardent heart within a humble beauty.", good_match_ko: "베고니아", good_match_en: "Begonia", bad_match_ko: "글라디올러스", bad_match_en: "Gladiolus" },
+        { month: 5, day: 23, flower_ko: "풀의 싹", flower_en: "Leaf Bud", keywords_ko: "첫사랑의 추억", keywords_en: "Memory of First Love", description_ko: "이제 막 시작되는 사랑의 설렘을 간직하고 있습니다.", description_en: "You hold the thrill of a love just beginning.", good_match_ko: "새싹", good_match_en: "Sprout", bad_match_ko: "낙엽", bad_match_en: "Fallen Leaf" },
+        { month: 5, day: 24, flower_ko: "헬리오트로프", flower_en: "Heliotrope", keywords_ko: "사랑이여 영원하라, 헌신", keywords_en: "Eternal Love, Devotion", description_ko: "태양을 따르는 해바라기처럼, 한 사람을 향한 영원한 사랑과 헌신.", description_en: "Like a sunflower following the sun, eternal love and devotion for one person.", good_match_ko: "해바라기", good_match_en: "Sunflower", bad_match_ko: "물망초", bad_match_en: "Forget-me-not" },
+        { month: 5, day: 25, flower_ko: "삼색제비꽃", flower_en: "Pansy", keywords_ko: "순애, 나를 생각해 주세요", keywords_en: "Pure Love, Think of Me", description_ko: "순수한 마음으로 사랑하며, 상대방이 자신을 생각해 주기를 바랍니다.", description_en: "You love with a pure heart and wish for the other person to think of you.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "튤립", bad_match_en: "Tulip" },
+        { month: 5, day: 26, flower_ko: "올리브나무", flower_en: "Olive Tree", keywords_ko: "평화", keywords_en: "Peace", description_ko: "평화를 사랑하고, 주변 사람들과 조화롭게 지내는 것을 중요하게 생각합니다.", description_en: "You love peace and consider it important to live in harmony with those around you.", good_match_ko: "월계수", good_match_en: "Laurel", bad_match_ko: "엉겅퀴", bad_match_en: "Thistle" },
+        { month: 5, day: 27, flower_ko: "데이지", flower_en: "Daisy", keywords_ko: "순수한 마음, 천진난만함", keywords_en: "Pure Heart, Innocence", description_ko: "순수하고 꾸밈없는 마음으로 세상을 대하는 천진난만한 사람.", description_en: "An innocent person who faces the world with a pure and unadorned heart.", good_match_ko: "민들레", good_match_en: "Dandelion", bad_match_ko: "국화", bad_match_en: "Chrysanthemum" },
+        { month: 5, day: 28, flower_ko: "박하", flower_en: "Mint", keywords_ko: "미덕, 다시 한번 사랑하고 싶습니다", keywords_en: "Virtue, I Want to Love Again", description_ko: "아픈 사랑의 기억을 딛고, 다시 한번 사랑할 용기를 가진 당신.", description_en: "Overcoming painful memories of love, you have the courage to love again.", good_match_ko: "로즈마리", good_match_en: "Rosemary", bad_match_ko: "바질", bad_match_en: "Basil" },
+        { month: 5, day: 29, flower_ko: "토끼풀", flower_en: "Clover", keywords_ko: "약속, 행운", keywords_en: "Promise, Good Luck", description_ko: "네 잎 클로버처럼, 당신의 존재는 주변에 행운을 가져다줍니다.", description_en: "Like a four-leaf clover, your existence brings good luck to your surroundings.", good_match_ko: "자운영", good_match_en: "Astragalus", bad_match_ko: "쇠뜨기", bad_match_en: "Horsetail" },
+        { month: 5, day: 30, flower_ko: "보라색 라일락", flower_en: "Purple Lilac", keywords_ko: "사랑의 싹", keywords_en: "Bud of Love", description_ko: "이제 막 피어나는 사랑의 설렘을 간직하고 있습니다.", description_en: "You hold the thrill of a love just beginning to bloom.", good_match_ko: "라일락", good_match_en: "Lilac", bad_match_ko: "수국", bad_match_en: "Hydrangea" },
+        { month: 5, day: 31, flower_ko: "무릇", flower_en: "Scilla", keywords_ko: "강한 자제력, 인내", keywords_en: "Strong Self-Control, Patience", description_ko: "어려운 상황에서도 자신을 다스릴 줄 아는 강한 정신력의 소유자.", description_en: "The owner of a strong mentality who knows how to control oneself even in difficult situations.", good_match_ko: "히아신스", good_match_en: "Hyacinth", bad_match_ko: "튤립", bad_match_en: "Tulip" },
+        { month: 6, day: 1, flower_ko: "장미", flower_en: "Rose", keywords_ko: "사랑, 아름다움", keywords_en: "Love, Beauty", description_ko: "사랑과 아름다움의 상징. 열정적이고 매력적인 사람입니다.", description_en: "A symbol of love and beauty. You are a passionate and charming person.", good_match_ko: "스위트피", good_match_en: "Sweet Pea", bad_match_ko: "라벤더", bad_match_en: "Lavender" },
+        { month: 6, day: 2, flower_ko: "빨간 패랭이꽃", flower_en: "Red Catchfly", keywords_ko: "젊음의 사랑, 열정", keywords_en: "Youthful Love, Passion", description_ko: "젊음의 뜨거운 열정으로 사랑하는 사람.", description_en: "A person who loves with the fiery passion of youth.", good_match_ko: "카네이션", good_match_en: "Carnation", bad_match_ko: "패랭이꽃", bad_match_en: "Dianthus" },
+        { month: 6, day: 3, flower_ko: "아마", flower_en: "Flax", keywords_ko: "감사", keywords_en: "Gratitude", description_ko: "주변의 모든 것에 감사할 줄 아는 겸손하고 따뜻한 마음.", description_en: "A humble and warm heart that knows how to be grateful for everything around.", good_match_ko: "목화", good_match_en: "Cotton", bad_match_ko: "쐐기풀", bad_match_en: "Nettle" },
+        { month: 6, day: 4, flower_ko: "장미", flower_en: "Damask Rose", keywords_ko: "아름다운 모습", keywords_en: "Beautiful Face", description_ko: "외면과 내면이 모두 아름다운, 장미 같은 사람.", description_en: "A rose-like person, beautiful both inside and out.", good_match_ko: "자스민", good_match_en: "Jasmine", bad_match_ko: "매리골드", bad_match_en: "Marigold" },
+        { month: 6, day: 5, flower_ko: "메리골드", flower_en: "Marigold", keywords_ko: "이별의 슬픔, 가련한 애정", keywords_en: "Sorrow of Parting, Pitiful Affection", description_ko: "슬픔 속에서도 애정을 잃지 않는, 깊고 애틋한 마음.", description_en: "A deep and affectionate heart that does not lose affection even in sadness.", good_match_ko: "국화", good_match_en: "Chrysanthemum", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 6, day: 6, flower_ko: "노랑 붓꽃", flower_en: "Yellow Iris", keywords_ko: "신앙, 믿는 자의 행복", keywords_en: "Faith, Happiness of a Believer", description_ko: "굳건한 믿음을 통해 진정한 행복을 찾는 사람.", description_en: "A person who finds true happiness through firm faith.", good_match_ko: "아이리스", good_match_en: "Iris", bad_match_ko: "붓꽃", bad_match_en: "Fleur-de-lis" },
+        { month: 6, day: 7, flower_ko: "슈미트티아나", flower_en: "Schmidtiana", keywords_ko: "사모하는 마음", keywords_en: "Yearning Heart", description_ko: "마음속 깊이 누군가를 그리워하고 사랑하는 순수한 마음.", description_en: "A pure heart that deeply misses and loves someone.", good_match_ko: "에델바이스", good_match_en: "Edelweiss", bad_match_ko: "데이지", bad_match_en: "Daisy" },
+        { month: 6, day: 8, flower_ko: "자스민", flower_en: "Jasmine", keywords_ko: "사랑스러움, 관능적", keywords_en: "Loveliness, Sensual", description_ko: "사랑스럽고 관능적인 매력을 동시에 가진, 매혹적인 사람.", description_en: "A captivating person with both lovely and sensual charms.", good_match_ko: "치자나무", good_match_en: "Gardenia", bad_match_ko: "라벤더", bad_match_en: "Lavender" },
+        { month: 6, day: 9, flower_ko: "스위트피", flower_en: "Sweet Pea", keywords_ko: "우아한 추억, 즐거움", keywords_en: "Elegant Memories, Joy", description_ko: "즐겁고 아름다운 추억을 만들며, 삶을 우아하게 살아갑니다.", description_en: "You live life elegantly, creating joyful and beautiful memories.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "라일락", bad_match_en: "Lilac" },
+        { month: 6, day: 10, flower_ko: "수염패랭이꽃", flower_en: "Sweet William", keywords_ko: "의협심, 거절", keywords_en: "Chivalry, Refusal", description_ko: "정의를 위해 용감하게 나서는 의협심과, 불의를 거절할 줄 아는 단호함.", description_en: "Chivalry to bravely stand up for justice, and the firmness to refuse injustice.", good_match_ko: "패랭이꽃", good_match_en: "Dianthus", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 6, day: 11, flower_ko: "중국패모", flower_en: "Fritillaria Thunbergii", keywords_ko: "위엄", keywords_en: "Dignity", description_ko: "타고난 위엄과 품위로 주변의 존경을 받습니다.", description_en: "You earn the respect of those around you with your natural dignity and grace.", good_match_ko: "백합", good_match_en: "Lily", bad_match_ko: "튤립", bad_match_en: "Tulip" },
+        { month: 6, day: 12, flower_ko: "레제다 오도라타", flower_en: "Reseda Odorata", keywords_ko: "매력", keywords_en: "Charm", description_ko: "꾸미지 않은 자연스러운 모습에서 풍겨 나오는, 거부할 수 없는 매력.", description_en: "An irresistible charm that emanates from your natural, unadorned self.", good_match_ko: "헬리오트로프", good_match_en: "Heliotrope", bad_match_ko: "히아신스", bad_match_en: "Hyacinth" },
+        { month: 6, day: 13, flower_ko: "디기탈리스", flower_en: "Foxglove", keywords_ko: "열애, 비성실", keywords_en: "Ardent Love, Insincerity", description_ko: "뜨겁게 사랑하지만, 때로는 마음이 쉽게 변할 수 있습니다.", description_en: "You love ardently, but sometimes your heart can change easily.", good_match_ko: "투구꽃", good_match_en: "Monkshood", bad_match_ko: "델피니움", bad_match_en: "Delphinium" },
+        { month: 6, day: 14, flower_ko: "뚜껑별꽃", flower_en: "Anagallis", keywords_ko: "추상, 추억", keywords_en: "Reminiscence, Memories", description_ko: "과거의 아름다운 기억들을 떠올리며 현재를 살아갑니다.", description_en: "You live in the present, reminiscing about the beautiful memories of the past.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "빙카", bad_match_en: "Periwinkle" },
+        { month: 6, day: 15, flower_ko: "카네이션", flower_en: "Carnation", keywords_ko: "정열, 모정", keywords_en: "Passion, Motherly Love", description_ko: "뜨거운 열정과 따뜻한 모정을 모두 가진, 사랑이 많은 사람.", description_en: "A loving person with both fiery passion and warm motherly love.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "패랭이꽃", bad_match_en: "Dianthus" },
+        { month: 6, day: 16, flower_ko: "튜베로즈", flower_en: "Tuberose", keywords_ko: "위험한 쾌락", keywords_en: "Dangerous Pleasure", description_ko: "매혹적이지만 위험한, 치명적인 매력의 소유자.", description_en: "The owner of a fatal charm, enchanting but dangerous.", good_match_ko: "자스민", good_match_en: "Jasmine", bad_match_ko: "백합", bad_match_en: "Lily" },
+        { month: 6, day: 17, flower_ko: "토끼풀", flower_en: "White Clover", keywords_ko: "약속, 쾌활", keywords_en: "Promise, Cheerfulness", description_ko: "밝고 명랑한 성격으로, 맺은 약속은 반드시 지키는 신뢰의 아이콘.", description_en: "With a bright and cheerful personality, you are an icon of trust who always keeps promises.", good_match_ko: "자운영", good_match_en: "Astragalus", bad_match_ko: "붉은 토끼풀", bad_match_en: "Red Clover" },
+        { month: 6, day: 18, flower_ko: "백리향", flower_en: "Thyme", keywords_ko: "용기, 활동력", keywords_en: "Courage, Vigor", description_ko: "용기 있고 활기차게, 끊임없이 새로운 도전을 즐깁니다.", description_en: "Courageous and vigorous, you constantly enjoy new challenges.", good_match_ko: "로즈마리", good_match_en: "Rosemary", bad_match_ko: "세이지", bad_match_en: "Sage" },
+        { month: 6, day: 19, flower_ko: "스위트브라이어", flower_en: "Sweetbrier", keywords_ko: "사랑", keywords_en: "Love", description_ko: "달콤한 향기처럼, 당신의 사랑은 주변을 행복하게 만듭니다.", description_en: "Like a sweet fragrance, your love makes your surroundings happy.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "찔레꽃", bad_match_en: "Eglantine Rose" },
+        { month: 6, day: 20, flower_ko: "꼬리풀", flower_en: "Veronica", keywords_ko: "달성, 성취", keywords_en: "Achievement, Accomplishment", description_ko: "목표를 향해 꾸준히 나아가, 마침내 원하는 바를 이루어냅니다.", description_en: "You steadily move towards your goal and finally achieve what you desire.", good_match_ko: "샐비어", good_match_en: "Salvia", bad_match_ko: "라벤더", bad_match_en: "Lavender" },
+        { month: 6, day: 21, flower_ko: "달맞이꽃", flower_en: "Evening Primrose", keywords_ko: "자유로운 마음, 기다림", keywords_en: "Free Spirit, Waiting", description_ko: "밤에 피어나는 꽃처럼, 당신은 자유로운 영혼으로 묵묵히 기다릴 줄 압니다.", description_en: "Like a flower that blooms at night, you are a free spirit who knows how to wait silently.", good_match_ko: "자스민", good_match_en: "Jasmine", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 6, day: 22, flower_ko: "가막살나무", flower_en: "Viburnum", keywords_ko: "사랑은 죽음보다 강하다", keywords_en: "Love is Stronger than Death", description_ko: "어떤 시련과 역경도 이겨내는, 위대하고 강인한 사랑.", description_en: "A great and strong love that overcomes any trial and adversity.", good_match_ko: "인동덩굴", good_match_en: "Honeysuckle", bad_match_ko: "산사나무", bad_match_en: "Hawthorn" },
+        { month: 6, day: 23, flower_ko: "접시꽃", flower_en: "Hollyhock", keywords_ko: "열렬한 사랑", keywords_en: "Ardent Love", description_ko: "태양을 향해 뻗어가는 접시꽃처럼, 열렬하고 정열적인 사랑.", description_en: "Like a hollyhock reaching for the sun, an ardent and passionate love.", good_match_ko: "해바라기", good_match_en: "Sunflower", bad_match_ko: "당아욱", bad_match_en: "Mallow" },
+        { month: 6, day: 24, flower_ko: "버베나", flower_en: "Verbena", keywords_ko: "가족의 화합", keywords_en: "Family Harmony", description_ko: "가족의 평화와 화합을 가장 소중히 여기는 따뜻한 사람.", description_en: "A warm person who cherishes the peace and harmony of the family most.", good_match_ko: "제라늄", good_match_en: "Geranium", bad_match_ko: "샐비어", bad_match_en: "Salvia" },
+        { month: 6, day: 25, flower_ko: "나팔꽃", flower_en: "Morning Glory", keywords_ko: "덧없는 사랑, 기쁜 소식", keywords_en: "Fleeting Love, Good News", description_ko: "짧지만 강렬한 사랑의 기쁨, 그리고 희망찬 소식을 기다립니다.", description_en: "The joy of a short but intense love, and waiting for hopeful news.", good_match_ko: "메꽃", bad_match_en: "Bindweed", bad_match_ko: "유홍초", bad_match_en: "Cypress Vine" },
+        { month: 6, day: 26, flower_ko: "흰 라일락", flower_en: "White Lilac", keywords_ko: "아름다운 맹세", keywords_en: "Beautiful Vow", description_ko: "순수하고 깨끗한 마음으로 맺은, 아름답고 영원한 약속.", description_en: "A beautiful and eternal promise made with a pure and clean heart.", good_match_ko: "라일락", good_match_en: "Lilac", bad_match_ko: "자주색 라일락", bad_match_en: "Purple Lilac" },
+        { month: 6, day: 27, flower_ko: "시계꽃", flower_en: "Passion Flower", keywords_ko: "성스러운 사랑", keywords_en: "Holy Love", description_ko: "종교적인 신념과도 같은, 깊고 성스러운 사랑.", description_en: "A deep and holy love, like a religious belief.", good_match_ko: "예수님 수난의 꽃", good_match_en: "Christ's Thorn Jujube", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 6, day: 28, flower_ko: "제라늄", flower_en: "Geranium", keywords_ko: "그대가 있기에 행복이 있네", keywords_en: "Because of You, There is Happiness", description_ko: "사랑하는 사람의 존재 자체가 당신에게 가장 큰 행복입니다.", description_en: "The very existence of your loved one is your greatest happiness.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "페라고늄", bad_match_en: "Pelargonium" },
+        { month: 6, day: 29, flower_ko: "빨간 제라늄", flower_en: "Red Geranium", keywords_ko: "그대가 있어 사랑이 있네", keywords_en: "Because of You, There is Love", description_ko: "당신이 있기에, 나의 사랑도 존재합니다.", description_en: "Because you exist, my love also exists.", good_match_ko: "제라늄", good_match_en: "Geranium", bad_match_ko: "카네이션", bad_match_en: "Carnation" },
+        { month: 6, day: 30, flower_ko: "인동", flower_en: "Honeysuckle", keywords_ko: "사랑의 인연", keywords_en: "Bond of Love", description_ko: "한번 맺은 사랑의 인연을 결코 놓지 않는, 끈끈한 사랑.", description_en: "A tenacious love that never lets go of the bond of love once formed.", good_match_ko: "등나무", good_match_en: "Wisteria", bad_match_ko: "담쟁이덩굴", bad_match_en: "Ivy" },
+        { month: 7, day: 1, flower_ko: "단양쑥부쟁이", flower_en: "Fig Marigold", keywords_ko: "태만", keywords_en: "Negligence", description_ko: "때로는 여유를 즐기는 것도 좋지만, 중요한 일을 놓치지 않도록 주의하세요.", description_en: "It's good to enjoy leisure sometimes, but be careful not to miss important things.", good_match_ko: "선인장", good_match_en: "Cactus", bad_match_ko: "해바라기", bad_match_en: "Sunflower" },
+        { month: 7, day: 2, flower_ko: "금어초", flower_en: "Snapdragon", keywords_ko: "욕망, 수다쟁이", keywords_en: "Desire, Talkative", description_ko: "자신의 욕망에 솔직하며, 이야기하는 것을 즐기는 유쾌한 사람.", description_en: "An enjoyable person who is honest about their desires and enjoys talking.", good_match_ko: "델피니움", good_match_en: "Delphinium", bad_match_ko: "디기탈리스", bad_match_en: "Foxglove" },
+        { month: 7, day: 3, flower_ko: "흰 양귀비", flower_en: "White Poppy", keywords_ko: "망각, 잠", keywords_en: "Oblivion, Sleep", description_ko: "아픈 기억은 잊고, 평온한 휴식을 통해 새로운 시작을 준비합니다.", description_en: "Forget painful memories and prepare for a new start through peaceful rest.", good_match_ko: "양귀비", good_match_en: "Poppy", bad_match_ko: "빨간 양귀비", bad_match_en: "Red Poppy" },
+        { month: 7, day: 4, flower_ko: "자목련", flower_en: "Lily Magnolia", keywords_ko: "자연애", keywords_en: "Love of Nature", description_ko: "자연을 사랑하고 그 속에서 평온함을 찾는, 우아하고 고결한 영혼.", description_en: "An elegant and noble soul who loves nature and finds tranquility within it.", good_match_ko: "목련", good_match_en: "Magnolia", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 7, day: 5, flower_ko: "라벤더", flower_en: "Lavender", keywords_ko: "풍부한 향기, 침묵", keywords_en: "Rich Fragrance, Silence", description_ko: "말보다는 깊은 향기처럼, 은은하게 자신의 존재감을 드러냅니다.", description_en: "Like a deep fragrance rather than words, you subtly reveal your presence.", good_match_ko: "로즈마리", good_match_en: "Rosemary", bad_match_ko: "자스민", bad_match_en: "Jasmine" },
+        { month: 7, day: 6, flower_ko: "해바라기", flower_en: "Sunflower", keywords_ko: "동경, 숭배", keywords_en: "Adoration, Worship", description_ko: "태양을 바라보는 해바라기처럼, 하나의 목표를 향한 변치 않는 마음.", description_en: "Like a sunflower facing the sun, an unchanging heart towards a single goal.", good_match_ko: "금잔화", good_match_en: "Marigold", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 7, day: 7, flower_ko: "서양까치밥나무", flower_en: "Gooseberry", keywords_ko: "예상, 기대", keywords_en: "Anticipation, Expectation", description_ko: "미래에 대한 긍정적인 기대와 희망을 품고 살아갑니다.", description_en: "You live with positive expectations and hopes for the future.", good_match_ko: "포도", good_match_en: "Grape", bad_match_ko: "블랙커런트", bad_match_en: "Blackcurrant" },
+        { month: 7, day: 8, flower_ko: "버드푸트", flower_en: "Birdfoot", keywords_ko: "다시 만날 날까지", keywords_en: "Until We Meet Again", description_ko: "이별은 슬프지만, 재회의 희망을 잃지 않는 긍정적인 마음.", description_en: "Though parting is sad, a positive heart that does not lose hope of reunion.", good_match_ko: "물망초", good_match_en: "Forget-me-not", bad_match_ko: "토끼풀", bad_match_en: "Clover" },
+        { month: 7, day: 9, flower_ko: "아이비 제라늄", flower_en: "Ivy Geranium", keywords_ko: "진실한 애정", keywords_en: "Sincere Affection", description_ko: "변치 않는, 진실되고 순수한 애정을 간직하고 있습니다.", description_en: "You hold an unchanging, sincere, and pure affection.", good_match_ko: "제라늄", good_match_en: "Geranium", bad_match_ko: "담쟁이덩굴", bad_match_en: "Ivy" },
+        { month: 7, day: 10, flower_ko: "초롱꽃", flower_en: "Bellflower", keywords_ko: "감사, 성실", keywords_en: "Gratitude, Sincerity", description_ko: "감사하는 마음을 잊지 않고, 모든 일에 성실하게 임합니다.", description_en: "Never forgetting a grateful heart, you approach everything with sincerity.", good_match_ko: "도라지꽃", good_match_en: "Balloon Flower", bad_match_ko: "디기탈리스", bad_match_en: "Foxglove" },
+        { month: 8, day: 1, flower_ko: "빨간 양귀비", flower_en: "Red Poppy", keywords_ko: "위로", keywords_en: "Consolation", description_ko: "아름다움 속에 슬픔을 간직한 당신은 다른 이의 상처를 위로할 줄 압니다.", description_en: "Holding sorrow within beauty, you know how to comfort others' wounds.", good_match_ko: "아네모네", good_match_en: "Anemone", bad_match_ko: "수선화", bad_match_en: "Narcissus" },
+        { month: 8, day: 2, flower_ko: "수레국화", flower_en: "Cornflower", keywords_ko: "섬세, 행복", keywords_en: "Delicacy, Happiness", description_ko: "작은 것에서 행복을 찾는 섬세한 마음의 소유자.", description_en: "The owner of a delicate heart that finds happiness in small things.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "엉겅퀴", bad_match_en: "Thistle" },
+        { month: 8, day: 3, flower_ko: "수박풀", flower_en: "Flower of an Hour", keywords_ko: "화려한 아름다움", keywords_en: "Splendid Beauty", description_ko: "짧은 순간에도 강렬하게 빛나는, 화려하고 매력적인 사람.", description_en: "A splendid and charming person who shines intensely even in a brief moment.", good_match_ko: "히비스커스", good_match_en: "Hibiscus", bad_match_ko: "접시꽃", bad_match_en: "Hollyhock" },
+        { month: 8, day: 4, flower_ko: "옥수수", flower_en: "Corn", keywords_ko: "재물, 보물", keywords_en: "Wealth, Treasure", description_ko: "풍요로운 결실을 맺듯, 재물과 행운이 따르는 사람.", description_en: "Like bearing abundant fruit, a person followed by wealth and luck.", good_match_ko: "해바라기", good_match_en: "Sunflower", bad_match_ko: "밀", bad_match_en: "Wheat" },
+        { month: 8, day: 5, flower_ko: "엘리카", flower_en: "Heather", keywords_ko: "고독, 쓸쓸함", keywords_en: "Loneliness, Solitude", description_ko: "때로는 고독을 즐길 줄 아는, 깊은 내면을 가진 사람.", description_en: "A person with a deep inner world who knows how to enjoy solitude at times.", good_match_ko: "라벤더", good_match_en: "Lavender", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 8, day: 6, flower_ko: "능소화", flower_en: "Trumpet Creeper", keywords_ko: "명예", keywords_en: "Honor", description_ko: "자신의 분야에서 높은 명예를 얻고, 주변의 존경을 받습니다.", description_en: "You gain high honor in your field and receive respect from those around you.", good_match_ko: "등나무", good_match_en: "Wisteria", bad_match_ko: "인동덩굴", bad_match_en: "Honeysuckle" },
+        { month: 8, day: 7, flower_ko: "석류", flower_en: "Pomegranate", keywords_ko: "원숙한 아름다움", keywords_en: "Mature Beauty", description_ko: "시간이 지날수록 더욱 깊어지는, 원숙하고 고혹적인 아름다움.", description_en: "A mature and bewitching beauty that deepens with time.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "오렌지", bad_match_en: "Orange" },
+        { month: 8, day: 8, flower_ko: "진달래", flower_en: "Azalea", keywords_ko: "사랑의 희열", keywords_en: "Joy of Love", description_ko: "사랑이 주는 기쁨과 설렘을 온전히 느낄 줄 아는 순수한 영혼.", description_en: "A pure soul who knows how to fully feel the joy and thrill that love brings.", good_match_ko: "철쭉", good_match_en: "Royal Azalea", bad_match_ko: "칼미아", bad_match_en: "Kalmia" },
+        { month: 8, day: 9, flower_ko: "시스투스", flower_en: "Cistus", keywords_ko: "인기", keywords_en: "Popularity", description_ko: "밝고 매력적인 성격으로, 어딜 가나 많은 사람들의 사랑을 받습니다.", description_en: "With a bright and charming personality, you are loved by many wherever you go.", good_match_ko: "라벤더", good_match_en: "Lavender", bad_match_ko: "로즈마리", bad_match_en: "Rosemary" },
+        { month: 8, day: 10, flower_ko: "이끼", flower_en: "Moss", keywords_ko: "모성애", keywords_en: "Maternal Love", description_ko: "주변을 따뜻하게 보살피는 깊은 모성애를 가졌습니다.", description_en: "You have a deep maternal love that warmly cares for those around you.", good_match_ko: "제비꽃", good_match_en: "Violet", bad_match_ko: "동백", bad_match_en: "Camellia" },
+        { month: 9, day: 1, flower_ko: "호랑이꽃", flower_en: "Tiger Flower", keywords_ko: "나를 사랑해 주세요", keywords_en: "Please Love Me", description_ko: "화려하고 강렬한 매력 뒤에 사랑받고 싶은 순수한 마음.", description_en: "Behind the flashy and intense charm lies a pure heart that wants to be loved.", good_match_ko: "글라디올러스", good_match_en: "Gladiolus", bad_match_ko: "백합", bad_match_en: "Lily" },
+        { month: 9, day: 2, flower_ko: "멕시칸 아이비", flower_en: "Cobaea", keywords_ko: "변화", keywords_en: "Change", description_ko: "끊임없이 변화하고 성장하며, 새로운 모습을 보여주는 것을 즐깁니다.", description_en: "You enjoy constantly changing, growing, and showing new sides of yourself.", good_match_ko: "나팔꽃", good_match_en: "Morning Glory", bad_match_ko: "담쟁이덩굴", bad_match_en: "Ivy" },
+        { month: 9, day: 3, flower_ko: "마거리트", flower_en: "Marguerite", keywords_ko: "진실한 사랑, 비밀을 밝히다", keywords_en: "True Love, To Reveal a Secret", description_ko: "진실된 사랑 앞에서, 마음속 깊은 비밀을 털어놓을 용기.", description_en: "The courage to confess the deep secrets of your heart in front of true love.", good_match_ko: "데이지", good_match_en: "Daisy", bad_match_ko: "국화", bad_match_en: "Chrysanthemum" },
+        { month: 9, day: 4, flower_ko: "뱀무", flower_en: "Geum", keywords_ko: "만족된 사랑", keywords_en: "Satisfied Love", description_ko: "사랑 안에서 충만한 만족과 행복을 느끼며 살아갑니다.", description_en: "You live feeling full satisfaction and happiness in love.", good_match_ko: "딸기", good_match_en: "Strawberry", bad_match_ko: "미나리아재비", bad_match_en: "Buttercup" },
+        { month: 9, day: 5, flower_ko: "느릅나무", flower_en: "Elm", keywords_ko: "신뢰", keywords_en: "Trust", description_ko: "굳건하고 믿음직스러워, 주변 사람들에게 깊은 신뢰를 줍니다.", description_en: "Steadfast and reliable, you inspire deep trust in those around you.", good_match_ko: "참나무", good_match_en: "Oak", bad_match_ko: "포플러", bad_match_en: "Poplar" },
+        { month: 9, day: 6, flower_ko: "한련", flower_en: "Nasturtium", keywords_ko: "애국심, 변덕", keywords_en: "Patriotism, Caprice", description_ko: "나라를 사랑하는 마음과, 때로는 예측할 수 없는 변덕스러운 매력.", description_en: "A heart that loves the country, and at times, an unpredictable, capricious charm.", good_match_ko: "메리골드", good_match_en: "Marigold", bad_match_ko: "금잔화", bad_match_en: "Calendula" },
+        { month: 9, day: 7, flower_ko: "오렌지", flower_en: "Orange", keywords_ko: "새색시의 기쁨", keywords_en: "Joy of a Bride", description_ko: "새로운 시작에 대한 설렘과 기쁨으로 가득 찬, 순수한 마음.", description_en: "A pure heart full of excitement and joy for a new beginning.", good_match_ko: "레몬", good_match_en: "Lemon", bad_match_ko: "자몽", bad_match_en: "Grapefruit" },
+        { month: 9, day: 8, flower_ko: "갓", flower_en: "Mustard", keywords_ko: "무관심, 냉담", keywords_en: "Indifference, Apathy", description_ko: "때로는 세상사에 무관심한 듯, 자신만의 세계에 집중합니다.", description_en: "Sometimes, as if indifferent to worldly affairs, you focus on your own world.", good_match_ko: "유채꽃", good_match_en: "Rapeseed Flower", bad_match_ko: "양배추꽃", bad_match_en: "Cabbage Flower" },
+        { month: 9, day: 9, flower_ko: "갓개매취", flower_en: "Michaelmas Daisy", keywords_ko: "추억, 인내", keywords_en: "Memory, Patience", description_ko: "지나간 추억을 소중히 여기며, 현재의 어려움을 묵묵히 이겨냅니다.", description_en: "Cherishing past memories, you silently overcome present difficulties.", good_match_ko: "과꽃", good_match_en: "China Aster", bad_match_ko: "데이지", bad_match_en: "Daisy" },
+        { month: 9, day: 10, flower_ko: "흰색 과꽃", flower_en: "White Aster", keywords_ko: "믿는 마음", keywords_en: "Believing Heart", description_ko: "순수하고 깨끗한, 믿음으로 가득 찬 마음.", description_en: "A heart full of faith, pure and clean.", good_match_ko: "과꽃", good_match_en: "Aster", bad_match_ko: "국화", bad_match_en: "Chrysanthemum" },
+        { month: 10, day: 1, flower_ko: "빨간 국화", flower_en: "Red Chrysanthemum", keywords_ko: "사랑", keywords_en: "Love", description_ko: "가을의 정열을 닮은, 진실되고 뜨거운 사랑.", description_en: "A true and ardent love, resembling the passion of autumn.", good_match_ko: "카네이션", good_match_en: "Carnation", bad_match_ko: "노란 국화", bad_match_en: "Yellow Chrysanthemum" },
+        { month: 10, day: 2, flower_ko: "살구", flower_en: "Apricot", keywords_ko: "아가씨의 수줍음", keywords_en: "Maiden's Shyness", description_ko: "수줍음 속에 숨겨진, 달콤하고 사랑스러운 매력.", description_en: "A sweet and lovely charm hidden within shyness.", good_match_ko: "복숭아", good_match_en: "Peach", bad_match_ko: "자두", bad_match_en: "Plum" },
+        { month: 10, day: 3, flower_ko: "단풍나무", flower_en: "Maple", keywords_ko: "자제, 염려", keywords_en: "Restraint, Concern", description_ko: "화려하게 타오르기 전, 스스로를 다스릴 줄 아는 지혜와 사려 깊음.", description_en: "The wisdom and thoughtfulness to control oneself before burning brightly.", good_match_ko: "은행나무", good_match_en: "Ginkgo Tree", bad_match_ko: "느티나무", bad_match_en: "Zelkova Tree" },
+        { month: 10, day: 4, flower_ko: "홉", flower_en: "Hop", keywords_ko: "순진무구", keywords_en: "Innocence", description_ko: "세상 물정 모르는 듯한, 순수하고 천진난만한 마음.", description_en: "A pure and innocent heart, as if unaware of the ways of the world.", good_match_ko: "보리", good_match_en: "Barley", bad_match_ko: "밀", bad_match_en: "Wheat" },
+        { month: 10, day: 5, flower_ko: "종려나무", flower_en: "Windmill Palm", keywords_ko: "승리", keywords_en: "Victory", description_ko: "어떤 경쟁에서도 결국 승리를 쟁취하는 강한 정신력.", description_en: "A strong mentality that ultimately achieves victory in any competition.", good_match_ko: "월계수", good_match_en: "Laurel", bad_match_ko: "대나무", bad_match_en: "Bamboo" },
+        { month: 10, day: 6, flower_ko: "개암나무", flower_en: "Hazel", keywords_ko: "화해, 잘 어울리는 한 쌍", keywords_en: "Reconciliation, A Well-matched Couple", description_ko: "다툼 뒤에도 현명하게 화해를 이끌어내며, 누구와도 좋은 관계를 유지합니다.", description_en: "You wisely lead to reconciliation even after a fight and maintain good relationships with everyone.", good_match_ko: "도토리나무", good_match_en: "Acorn Tree", bad_match_ko: "밤나무", bad_match_en: "Chestnut Tree" },
+        { month: 10, day: 7, flower_ko: "전나무", flower_en: "Fir", keywords_ko: "고상함, 정직", keywords_en: "Nobility, Honesty", description_ko: "곧고 정직한 성품으로, 고상하고 품위 있는 삶을 살아갑니다.", description_en: "With an upright and honest character, you live a noble and dignified life.", good_match_ko: "소나무", good_match_en: "Pine", bad_match_ko: "삼나무", bad_match_en: "Cedar" },
+        { month: 10, day: 8, flower_ko: "파슬리", flower_en: "Parsley", keywords_ko: "축제, 승리", keywords_en: "Festival, Victory", description_ko: "인생을 축제처럼 즐길 줄 알며, 모든 일에서 승리를 이끌어냅니다.", description_en: "You know how to enjoy life like a festival and lead to victory in everything.", good_match_ko: "월계수", good_match_en: "Laurel", bad_match_ko: "고수", bad_match_en: "Coriander" },
+        { month: 10, day: 9, flower_ko: "회향", flower_en: "Fennel", keywords_ko: "극찬, 역량", keywords_en: "High Praise, Competence", description_ko: "뛰어난 능력으로 주변의 극찬을 받는, 유능한 사람.", description_en: "A competent person who receives high praise from those around for their outstanding abilities.", good_match_ko: "딜", good_match_en: "Dill", bad_match_ko: "캐러웨이", bad_match_en: "Caraway" },
+        { month: 10, day: 10, flower_ko: "멜론", flower_en: "Melon", keywords_ko: "포식, 배부름", keywords_en: "Feast, Fullness", description_ko: "삶의 풍요로움을 마음껏 누릴 줄 아는, 넉넉한 마음의 소유자.", description_en: "The owner of a generous heart who knows how to fully enjoy the richness of life.", good_match_ko: "수박", good_match_en: "Watermelon", bad_match_ko: "참외", bad_match_en: "Oriental Melon" },
+        { month: 11, day: 1, flower_ko: "서양모과", flower_en: "Medlar", keywords_ko: "유일한 사랑", keywords_en: "The Only Love", description_ko: "한 사람만을 향한, 변치 않는 깊고 유일한 사랑.", description_en: "An unchanging, deep, and singular love for only one person.", good_match_ko: "사과", good_match_en: "Apple", bad_match_ko: "레몬", bad_match_en: "Lemon" },
+        { month: 11, day: 2, flower_ko: "루피너스", flower_en: "Lupinus", keywords_ko: "모성애, 행복", keywords_en: "Maternal Love, Happiness", description_ko: "따뜻한 모성애로 주변을 보살피며, 그 속에서 행복을 느낍니다.", description_en: "You care for your surroundings with warm maternal love and find happiness in it.", good_match_ko: "델피니움", good_match_en: "Delphinium", bad_match_ko: "콩과 식물", bad_match_en: "Legume" },
+        { month: 11, day: 3, flower_ko: "브리오니아", flower_en: "Bryonia", keywords_ko: "거절", keywords_en: "Refusal", description_ko: "자신의 신념과 다른 것은 단호하게 거절할 줄 아는 용기.", description_en: "The courage to firmly refuse what is different from your beliefs.", good_match_ko: "담쟁이덩굴", good_match_en: "Ivy", bad_match_ko: "나팔꽃", bad_match_en: "Morning Glory" },
+        { month: 11, day: 4, flower_ko: "골고사리", flower_en: "Hart's Tongue Fern", keywords_ko: "진실의 위안", keywords_en: "Consolation of Truth", description_ko: "진실된 마음만이 진정한 위안을 줄 수 있다고 믿습니다.", description_en: "You believe that only a true heart can give true consolation.", good_match_ko: "양치", good_match_en: "Fern", bad_match_ko: "이끼", bad_match_en: "Moss" },
+        { month: 11, day: 5, flower_ko: "단양쑥부쟁이", flower_en: "Fig Marigold", keywords_ko: "공훈, 애국심", keywords_en: "Merit, Patriotism", description_ko: "공동체를 위해 헌신하며, 그 공로를 인정받습니다.", description_en: "You dedicate yourself to the community and are recognized for your merits.", good_match_ko: "국화", good_match_en: "Chrysanthemum", bad_match_ko: "데이지", bad_match_en: "Daisy" },
+        { month: 11, day: 6, flower_ko: "등골나물", flower_en: "Agrimony", keywords_ko: "주저, 망설임", keywords_en: "Hesitation, Indecision", description_ko: "중요한 결정 앞에서 신중하게 고민하지만, 때로는 과감한 결단이 필요합니다.", description_en: "You contemplate carefully before important decisions, but sometimes a bold decision is necessary.", good_match_ko: "톱풀", good_match_en: "Yarrow", bad_match_ko: "쑥", bad_match_en: "Mugwort" },
+        { month: 11, day: 7, flower_ko: "메리골드", flower_en: "Marigold", keywords_ko: "반드시 오고야 말 행복", keywords_en: "Inevitable Happiness", description_ko: "긍정적인 마음으로 기다리면, 행복은 반드시 찾아옵니다.", description_en: "If you wait with a positive mind, happiness will surely come.", good_match_ko: "금잔화", good_match_en: "Calendula", bad_match_ko: "국화", bad_match_en: "Chrysanthemum" },
+        { month: 11, day: 8, flower_ko: "가는동자꽃", flower_en: "Lychnis Flos-coculi", keywords_ko: "기지, 재치", keywords_en: "Wit, Tact", description_ko: "재치 있는 말과 행동으로, 어려운 상황을 슬기롭게 해결합니다.", description_en: "You wisely solve difficult situations with witty words and actions.", good_match_ko: "패랭이꽃", good_match_en: "Dianthus", bad_match_ko: "동자꽃", bad_match_en: "Lychnis" },
+        { month: 11, day: 9, flower_ko: "몰약의 꽃", flower_en: "Myrrh", keywords_ko: "진실", keywords_en: "Truth", description_ko: "어떤 상황에서도 진실을 추구하는, 곧고 정직한 사람.", description_en: "An upright and honest person who pursues truth in any situation.", good_match_ko: "유향", good_match_en: "Frankincense", bad_match_ko: "라벤더", bad_match_en: "Lavender" },
+        { month: 11, day: 10, flower_ko: "부용", flower_en: "Cotton Rose", keywords_ko: "섬세한 아름다움", keywords_en: "Delicate Beauty", description_ko: "시간이 지나며 변해가는, 섬세하고 다채로운 아름다움.", description_en: "A delicate and colorful beauty that changes over time.", good_match_ko: "히비스커스", good_match_en: "Hibiscus", bad_match_ko: "무궁화", bad_match_en: "Rose of Sharon" },
+        { month: 12, day: 1, flower_ko: "쑥국화", flower_en: "Tansy", keywords_ko: "평화", keywords_en: "Peace", description_ko: "어떤 상황에서도 평정심을 잃지 않는, 평화를 사랑하는 온화한 성품.", description_en: "A gentle nature that loves peace and never loses composure.", good_match_ko: "캐모마일", good_match_en: "Chamomile", bad_match_ko: "용담", bad_match_en: "Gentian" },
+        { month: 12, day: 2, flower_ko: "이끼", flower_en: "Moss", keywords_ko: "모성애", keywords_en: "Maternal Love", description_ko: "주변을 따뜻하게 보살피고 감싸주는 깊은 모성애.", description_en: "A deep maternal love that warmly cares for and embraces those around.", good_match_ko: "고사리", good_match_en: "Fern", bad_match_ko: "난초", bad_match_en: "Orchid" },
+        { month: 12, day: 3, flower_ko: "라벤더", flower_en: "Lavender", keywords_ko: "기대, 침묵", keywords_en: "Expectation, Silence", description_ko: "말없이 기다리는 시간 속에서, 더 큰 기대를 품습니다.", description_en: "In the time of silent waiting, you hold greater expectations.", good_match_ko: "로즈마리", good_match_en: "Rosemary", bad_match_ko: "세이지", bad_match_en: "Sage" },
+        { month: 12, day: 4, flower_ko: "수영", flower_en: "Rumex", keywords_ko: "애정", keywords_en: "Affection", description_ko: "친근하고 다정한 성격으로, 주변에 따뜻한 애정을 나눕니다.", description_en: "With a friendly and affectionate personality, you share warm affection with those around you.", good_match_ko: "클로버", good_match_en: "Clover", bad_match_ko: "괭이밥", bad_match_en: "Sorrel" },
+        { month: 12, day: 5, flower_ko: "앰브로시아", flower_en: "Ambrosia", keywords_ko: "행복한 연애", keywords_en: "Happy Romance", description_ko: "달콤하고 행복한 사랑을 만들어가는, 사랑스러운 사람.", description_en: "A lovely person who creates a sweet and happy love.", good_match_ko: "장미", good_match_en: "Rose", bad_match_ko: "돼지풀", bad_match_en: "Ragweed" },
+        { month: 12, day: 6, flower_ko: "바위취", flower_en: "Saxifrage", keywords_ko: "절실한 사랑", keywords_en: "Earnest Love", description_ko: "어려움 속에서도 꿋꿋하게 사랑을 지켜내는 열정.", description_en: "The passion to steadfastly protect love even in hardship.", good_match_ko: "에델바이스", good_match_en: "Edelweiss", bad_match_ko: "수련", bad_match_en: "Water Lily" },
+        { month: 12, day: 7, flower_ko: "양치", flower_en: "Fern", keywords_ko: "신뢰, 성실", keywords_en: "Trust, Sincerity", description_ko: "성실한 모습으로 주변 사람들에게 깊은 신뢰를 줍니다.", description_en: "You inspire deep trust in those around you with your sincere appearance.", good_match_ko: "이끼", good_match_en: "Moss", bad_match_ko: "화려한 꽃", bad_match_en: "Flashy Flower" },
+        { month: 12, day: 8, flower_ko: "갈대", flower_en: "Reed", keywords_ko: "깊은 애정, 신의", keywords_en: "Deep Affection, Faith", description_ko: "흔들림 속에서도 변치 않는, 깊고 믿음직한 사랑.", description_en: "A deep and trustworthy love that remains unchanged even amidst shaking.", good_match_ko: "부들", good_match_en: "Bulrush", bad_match_ko: "억새", bad_match_en: "Silver Grass" },
+        { month: 12, day: 9, flower_ko: "국화", flower_en: "Chrysanthemum", keywords_ko: "고결, 청순", keywords_en: "Nobility, Purity", description_ko: "고결하고 순수한 마음으로, 진실된 삶을 살아갑니다.", description_en: "With a noble and pure heart, you live a truthful life.", good_match_ko: "과꽃", good_match_en: "Aster", bad_match_ko: "데이지", bad_match_en: "Daisy" },
+        { month: 12, day: 10, flower_ko: "빨간 동백", flower_en: "Red Camellia", keywords_ko: "겸손한 아름다움, 진실한 사랑", keywords_en: "Humble Beauty, True Love", description_ko: "화려함 속에서도 겸손함을 잃지 않는, 진실된 사랑.", description_en: "A true love that does not lose humility amidst splendor.", good_match_ko: "동백", good_match_en: "Camellia", bad_match_ko: "장미", bad_match_en: "Rose" },
+        { month: 12, day: 31, flower_ko: "노송나무", flower_en: "Cypress", keywords_ko: "불멸, 굳건함", keywords_en: "Immortality, Steadfastness", description_ko: "한 해의 마지막 날, 어떤 시련에도 흔들리지 않는 굳건한 정신력.", description_en: "On the last day of the year, a steadfast spirit unshaken by any ordeal.", good_match_ko: "삼나무", good_match_en: "Cedar", bad_match_ko: "버드나무", bad_match_en: "Willow" }
+    ];
+
+    const translations = {
+        ko: {
+            'main-title': "나의 탄생화 알아보기", 'month-label': "태어난 월", 'day-label': "태어난 일", 'submit-button': "나의 탄생화 확인하기", 'loading-text': "당신의 꽃을 피우는 중입니다...",
+            'result-date-format': (month, day) => `${month}월 ${day}일의 탄생화`, 'flower-name-format': (flower) => flower, 'keywords-title': "키워드", 'description-title': "꽃 이야기",
+            'good-match-title': "잘 맞는 꽃", 'bad-match-title': "아쉬운 꽃", 'save-image-button': "스토리로 저장", 'back-button': "처음으로", 'month-format': (m) => `${m}월`, 'day-format': (d) => `${d}일`,
+            'api-error-title': "오류", 'api-error-body': "이미지 생성에 실패했습니다.", 'input-error-text': "유효한 날짜의 데이터가 없습니다.", 'retry-button': "재시도", 'story-footer': "나의 탄생화 알아보기",
+        },
+        en: {
+            'main-title': "Find Your Birth Flower", 'month-label': "Birth Month", 'day-label': "Birth Day", 'submit-button': "Find My Birth Flower", 'loading-text': "Your flower is blooming...",
+            'result-date-format': (month, day) => `The Flower of ${new Date(0, month-1).toLocaleString('en-US', { month: 'long' })} ${day}`, 'flower-name-format': (flower) => flower, 'keywords-title': "Keywords", 'description-title': "Flower Story",
+            'good-match-title': "Good Match", 'bad-match-title': "Challenging Match", 'save-image-button': "Save as Story", 'back-button': "Go Back",
+            'month-format': (m) => new Date(0, m-1).toLocaleString('en-US', { month: 'long' }), 'day-format': (d) => `${d}`, 'api-error-title': "Error",
+            'api-error-body': "Failed to generate image.", 'input-error-text': "No data for the selected date.", 'retry-button': "Retry", 'story-footer': "Birth Flower Finder",
+        }
+    };
+
+    // FUNCTIONS
+    function updateLanguageUI() {
+        const lang = translations[currentLanguage];
+        document.querySelectorAll('[id]').forEach(el => {
+            if (lang[el.id]) el.innerText = lang[el.id];
+        });
+        apiError.querySelector('strong').innerText = lang['api-error-title'];
+        apiError.querySelector('span').innerText = lang['api-error-body'];
+        populateMonths();
+        updateDayOptions();
+    }
+    
+    function switchLanguage(lang) {
+        currentLanguage = lang;
+        langKoButton.classList.toggle('bg-gray-700', lang === 'ko'); langKoButton.classList.toggle('text-white', lang === 'ko');
+        langEnButton.classList.toggle('bg-gray-700', lang === 'en'); langEnButton.classList.toggle('text-white', lang === 'en');
+        updateLanguageUI();
+    }
+
+    function populateMonths() {
+        const selectedMonth = monthSelect.value;
+        monthSelect.innerHTML = '';
+        for (let i = 1; i <= 12; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = translations[currentLanguage]['month-format'](i);
+            monthSelect.appendChild(option);
+        }
+        if (selectedMonth) monthSelect.value = selectedMonth;
+    }
+
+    function updateDayOptions() {
+        const month = parseInt(monthSelect.value);
+        const selectedDay = daySelect.value;
+        daySelect.innerHTML = '';
+        let daysInMonth = 31;
+        if (month === 2) daysInMonth = 29; 
+        else if ([4, 6, 9, 11].includes(month)) daysInMonth = 30;
+        for (let i = 1; i <= daysInMonth; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = translations[currentLanguage]['day-format'](i);
+            daySelect.appendChild(option);
+        }
+        if (selectedDay && selectedDay <= daysInMonth) daySelect.value = selectedDay; 
+        else daySelect.value = "1";
+    }
+
+    async function generateImageWithRetry(flowerName) {
+        if (flowerName === 'No Data') {
+             return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='640' viewBox='0 0 360 640'%3E%3Crect width='360' height='640' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='20' fill='%23888' text-anchor='middle' dominant-baseline='middle'%3EImage Not Available%3C/text%3E%3C/svg%3E";
+        }
+        const prompt = `A beautiful, minimalist, watercolor painting of a ${flowerName} against a clean white background.`;
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+        const payload = { instances: [{ "prompt": prompt }], parameters: { "sampleCount": 1 } };
+        const maxRetries = 3;
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.predictions?.[0]?.bytesBase64Encoded) {
+                        return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    }
+                }
+            } catch (error) { console.error(`Attempt ${i + 1} failed:`, error); }
+            if (i < maxRetries - 1) await new Promise(res => setTimeout(res, 1000 * (i + 1)));
+        }
+        return null;
+    }
+
+    function displayResult(flowerData) {
+        const lang = translations[currentLanguage];
+        document.getElementById('result-date').innerText = lang['result-date-format'](flowerData.month, flowerData.day);
+        document.getElementById('flower-name').innerText = flowerData[`flower_${currentLanguage}`];
+        document.getElementById('flower-keywords').innerText = flowerData[`keywords_${currentLanguage}`];
+        document.getElementById('flower-description').innerText = flowerData[`description_${currentLanguage}`];
+        document.getElementById('good-match-flower').innerText = flowerData[`good_match_${currentLanguage}`];
+        document.getElementById('bad-match-flower').innerText = flowerData[`bad_match_${currentLanguage}`];
+    }
+
+    async function attemptImageGeneration(flowerData) {
+        storyContent.classList.add('hidden');
+        actionButtons.classList.add('hidden');
+        loadingIndicator.classList.remove('hidden');
+        apiError.classList.add('hidden');
+
+        const flowerNameForPrompt = flowerData.flower_en.split('(')[0].trim();
+        generatedImageUrl = await generateImageWithRetry(flowerNameForPrompt);
+        
+        loadingIndicator.classList.add('hidden');
+        if (generatedImageUrl) {
+            flowerImage.src = generatedImageUrl;
+            displayResult(flowerData);
+            storyContent.classList.remove('hidden');
+            actionButtons.classList.remove('hidden');
+        } else {
+            apiError.classList.remove('hidden');
+        }
+    }
+
+    // EVENT LISTENERS
+    submitButton.addEventListener('click', async () => {
+        const month = parseInt(monthSelect.value), day = parseInt(daySelect.value);
+        inputError.classList.add('hidden');
+        const flowerData = birthFlowerData.find(f => f.month === month && f.day === day);
+        if (!flowerData) {
+            inputError.innerText = translations[currentLanguage]['input-error-text'];
+            inputError.classList.remove('hidden');
+            return;
+        }
+        lastFlowerData = flowerData;
+        inputScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        await attemptImageGeneration(flowerData);
+    });
+
+    retryButton.addEventListener('click', () => { if(lastFlowerData) attemptImageGeneration(lastFlowerData); });
+
+    backButton.addEventListener('click', () => {
+        resultScreen.classList.add('hidden');
+        inputScreen.classList.remove('hidden');
+        generatedImageUrl = ''; lastFlowerData = null;
+    });
+    
+    saveImageButton.addEventListener('click', () => {
+        if (!storyContent) return;
+        html2canvas(storyContent, { 
+            useCORS: true, 
+            backgroundColor: null, // Use element's background
+            onclone: (document) => { // Ensure font is loaded in canvas
+                document.head.innerHTML += `
+                <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+                <style> * { font-family: 'Noto Sans KR', sans-serif !important; } </style>
+                `;
+            }
+        }).then(canvas => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `${lastFlowerData.flower_en.replace(/\s/g, '_')}_story.png`;
+            a.click();
+        });
+    });
+
+    langKoButton.addEventListener('click', () => switchLanguage('ko'));
+    langEnButton.addEventListener('click', () => switchLanguage('en'));
+    monthSelect.addEventListener('change', updateDayOptions);
+
+    // INITIALIZATION
+    switchLanguage('ko');
+});
+</script>
+</body>
+</html>
+
