@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
              return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='640' viewBox='0 0 360 640'%3E%3Crect width='360' height='640' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='20' fill='%23888' text-anchor='middle' dominant-baseline='middle'%3EImage Not Available%3C/text%3E%3C/svg%3E";
         }
         const prompt = `A beautiful, minimalist, watercolor painting of a ${flowerName} against a clean white background.`;
-        const apiKey = "";
+        const apiKey = "AIzaSyBGI3kM6pFfEjtBAUwyfVVGl3cIJv44hdI";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
         const payload = { instances: [{ "prompt": prompt }], parameters: { "sampleCount": 1 } };
         const maxRetries = 3;
